@@ -16,9 +16,9 @@ const thesisMeta = {
   buildDate: "2026",
   profileImage: "/images/skripsi/pp2.jpg",
   diagramImage: "/images/skripsi/d1.png",
-  githubPrimary: "https://github.com/username/repo-utama",
-  githubSecondary: "https://github.com/username/repo-pendukung",
-  driveLink: "https://drive.google.com/drive/folders/contoh-link-skripsi",
+  githubPrimary: "https://github.com/SyukurGit/backend-skripsi",
+  githubSecondary: "https://github.com/SyukurGit/frontend-skripsi",
+  driveLink: "https://drive.google.com/drive/folders/-",
 };
 
 const keyPoints = [
@@ -61,15 +61,15 @@ const researchFocus = [
 
 const contributions = [
   {
-    title: "Kontribusi utama",
-    body: "Project ini menegaskan bahwa RBAC statis saja tidak cukup. Role seperti Customer Service tidak hanya dibatasi oleh identitas peran, tetapi juga oleh konteks ticket aktif, status penanganan, dan durasi akses sensitif yang bersifat sementara pada kondisi tertentu.",
-    accent: "blue",
-  },
-  {
-    title: "Konteks penelitian",
-    body: "Dompet digital digunakan sebagai media representasi agar konsep kontrol akses dapat digambarkan pada lingkungan yang relevan dengan data sensitif, seperti KYC, status akun, dan riwayat aktivitas pengguna, tanpa harus membangun platform fintech penuh.",
-    accent: "amber",
-  },
+  title: "Kontribusi utama",
+body: "Penelitian ini berangkat dari fakta bahwa pembahasan kontrol akses seperti Least Privilege dan Just-In-Time Access umumnya sering dibahas dan berfokus pada level infrastruktur dan masih jarang diterapkan pada level aplikasi. Oleh karena itu, pendekatan tersebut dibawa langsung ke layer aplikasi sebagai titik interaksi terhadap data sensitif. Keduanya dikombinasikan dan diimplementasikan dalam alur sistem, serta direpresentasikan melalui prototipe dompet digital sebagai media untuk memvisualisasikan praktik kontrol akses internal yang selama ini cenderung tertutup di industri dan jarang dibahas secara akademik.",
+accent: "blue",
+},
+ {
+  title: "Konteks penelitian",
+  body: "Dompet digital digunakan sebagai media representasi agar konsep kontrol akses dapat digambarkan pada lingkungan yang relevan dengan data sensitif, seperti KYC, status akun, dan riwayat aktivitas pengguna, tanpa harus membangun platform fintech secara penuh. Dalam konteks ini, penelitian menegaskan bahwa RBAC statis saja tidak cukup. Akses tidak hanya ditentukan oleh peran, tetapi juga oleh konteks kerja seperti ticket aktif, status penanganan, serta dibatasi oleh durasi akses sensitif yang bersifat sementara pada kondisi tertentu.",
+  accent: "amber",
+},
   {
     title: "Batasan project",
     body: "Project ini adalah prototipe akademik. Fokusnya bukan menyaingi sistem finansial besar sudah ada atau menawarkan metode baru sepenuhnya, melainkan mengakademiskan praktik keamanan yang umumnya tertutup di industri ke dalam bentuk ranah akademik yang dapat diamati, diuji, dan dijelaskan secara terbuka.",
@@ -131,8 +131,8 @@ const diagramSteps = [
 ];
 
 const resources = [
-  { label: "GitHub Repository Utama", href: thesisMeta.githubPrimary },
-  { label: "GitHub Repository Pendukung / Referensi", href: thesisMeta.githubSecondary },
+  { label: "GitHub Repository Backend", href: thesisMeta.githubPrimary },
+  { label: "GitHub Repository Frontend", href: thesisMeta.githubSecondary },
   { label: "Google Drive Dokumen Skripsi", href: thesisMeta.driveLink },
 ];
 
