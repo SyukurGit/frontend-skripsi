@@ -62,7 +62,7 @@ const researchFocus = [
 const contributions = [
   {
   title: "Kontribusi utama",
-body: "Penelitian ini berangkat dari fakta bahwa pembahasan kontrol akses seperti Least Privilege dan Just-In-Time Access umumnya sering dibahas dan berfokus pada level infrastruktur dan masih jarang diterapkan pada level aplikasi. Oleh karena itu, pendekatan tersebut dibawa langsung ke layer aplikasi sebagai titik interaksi terhadap data sensitif. Keduanya dikombinasikan dan diimplementasikan dalam alur sistem, serta direpresentasikan melalui prototipe dompet digital sebagai media untuk memvisualisasikan praktik kontrol akses internal yang selama ini cenderung tertutup di industri dan jarang dibahas secara akademik.",
+body: "Penelitian ini berangkat dari fakta bahwa pembahasan kontrol akses seperti Least Privilege dan Just-In-Time Access umumnya sering dibahas pada level infrastruktur dan masih jarang dibahas dan juga diterapkan pada level aplikasi. Oleh karena itu, pendekatan tersebut dibawa langsung ke layer aplikasi sebagai titik interaksi terhadap data sensitif. Keduanya dikombinasikan dan diimplementasikan dalam alur sistem, serta direpresentasikan melalui prototipe dompet digital sebagai media untuk memvisualisasikan praktik kontrol akses internal yang selama ini cenderung tertutup di industri dan jarang dibahas secara akademik.",
 accent: "blue",
 },
  {
