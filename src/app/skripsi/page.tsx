@@ -25,12 +25,12 @@ const keyPoints = [
   {
     label: "Masalah utama",
     value: "Penyalahgunaan Internal / Insider Threat",
-    description: "Risiko muncul dari pengguna internal yang memiliki kredensial sah, tetapi berpotensi mengakses atau mengubah data di luar kebutuhan tugasnya.",
+    description: "Risiko muncul dari Peran atau ROLE pengguna internal sistem yang memiliki kredensial sah, tetapi berpotensi mengakses atau mengubah data di luar kebutuhan tugasnya.",
   },
   {
     label: "Kelemahan dasar",
     value: "RBAC Saja Belum Cukup",
-    description: "Role seperti RBAC dapat membatasi area kerja, tetapi belum otomatis membatasi seberapa sempit data yang boleh diakses dan berapa lama dan juga kapan akses sensitif boleh aktif.",
+    description: "Role seperti RBAC dapat membatasi area kerja berdasarkan Peran, tetapi belum otomatis membatasi seberapa sempit data yang boleh diakses dan berapa lama dan juga kapan akses sensitif boleh aktif.",
   },
   {
     label: "Solusi yang diusulkan",
@@ -39,7 +39,7 @@ const keyPoints = [
   },
   {
     label: "Media representasi",
-    value: "Prototipe Dompet Digital ('Dompetku')",
+    value: "Prototipe Dompet Digital",
     description: "Prototipe dompet digital dipilih sebagai gambaran implementasi karena pengguna internal seperti role support teknis mengelola langsung data sensitif seperti KYC, status akun, dan riwayat aktivitas yang berpotensi disalahgunakan dari sisi internal dan juga relevan dengan skenario penelitian.",
   },
 ];
@@ -104,11 +104,15 @@ const boundaries = [
 ];
 
 const diagramSteps = [
-  "Customer Service berada pada halaman detail ticket dan mengajukan permintaan akses sementara untuk fitur sensitif tertentu.",
-  "Middleware backend memeriksa apakah ticket valid, masih aktif, dan benar-benar ditugaskan kepada Customer Service yang sedang login.",
-  "Jika seluruh kondisi bernilai benar, backend membuat sesi Just-in-Time sementara dan membuka fitur yang diminta hanya dalam jangka waktu terbatas.",
-  "Seluruh keputusan direkam ke audit log dan terminal log agar dapat ditelusuri ulang saat evaluasi atau demonstrasi.",
-  "Ketika waktu habis atau ticket selesai, akses dicabut kembali secara otomatis agar tidak menjadi standing privilege.",
+  "Role Customer Service membuka halaman detail ticket dan mengajukan request akses sementara untuk fitur sensitif tertentu.",
+
+  "Backend melakukan validasi secara berurutan, mulai dari pengecekan apakah nomor ticket valid, status ticket masih aktif (open/in progress), serta memastikan ticket tersebut memang di-assign kepada Customer Service yang sedang login.",
+
+  "Jika seluruh validasi berhasil, backend mengaktifkan sesi Just-in-Time dan membuka akses sensitif hanya dalam durasi terbatas, misalnya 15 menit, agar akses tidak bersifat permanen.",
+
+  "Selama sesi berlangsung, Customer Service hanya dapat mengakses data dan fungsi yang relevan dengan ticket yang sedang ditangani, sementara seluruh aktivitas dan keputusan sistem dicatat ke audit log dan terminal log.",
+
+  "Ketika durasi habis, ticket ditutup, atau Customer Service keluar dari sesi ticket, backend akan melakukan auto-revoke untuk mencabut akses sensitif secara otomatis agar tidak berubah menjadi standing privilege.",
 ];
 
 const resources = [
@@ -120,15 +124,15 @@ const resources = [
 const lpDiagramItems = [
   {
     title: "Kondisi sebelum penerapan Least Privilege",
-    image: "/images/skripsi/lp-before-placeholder.png",
+    image: "/images/skripsi/sebelum.png",
     caption:
-      "Ganti dengan gambar atau screenshot yang memperlihatkan kondisi akses sebelum pembatasan konteks diterapkan, misalnya ketika Customer Service masih berpotensi memiliki ruang akses yang lebih luas dari kebutuhan tugasnya.",
+      "Pada kondisi merupakan gambaran design kontrol akses yang hanya mengandalkan RBAC statis pada umumnya, dimana role seperti CS setelah login langsung memiliki akses yang luas dan terus aktif terhadap berbagai fitur dan data sensitif, tanpa pembatasan berdasarkan konteks yang spesifik.",
   },
   {
     title: "Kondisi setelah penerapan Least Privilege",
-    image: "/images/skripsi/lp-after-placeholder.png",
+    image: "/images/skripsi/sesudah.png",
     caption:
-      "Ganti dengan gambar atau screenshot yang memperlihatkan bahwa akses Customer Service telah dipersempit oleh ticket aktif, assignment yang sah, dan kebutuhan operasional yang relevan.",
+      "Setelah penerapan Least Privilege, akses pada menu yang tersedia setelah Customer Service login, dipersempit berdasarkan konteks ticket yang sedang diambil dan tangani. Data dan fungsi sensitif hanya dapat diakses setelah backend memverifikasi bahwa ticket masih valid, aktif, dan memang ditugaskan kepada Customer Service yang sedang menangani ticket tersebut."
   },
 ];
 
@@ -262,7 +266,7 @@ export default function SkripsiPage() {
         </div>
 
         <div className="grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
-          <SectionCard label="Diagram pendamping" title="Visualisasi perubahan sebelum dan sesudah Least Privilege">
+          <SectionCard label="Visualisasi" title="Visualisasi perubahan RBAC design kontrol sebelum dan sesudah Least Privilege">
             <div className="grid gap-4 lg:grid-cols-2">
               {lpDiagramItems.map((item) => (
                 <div key={item.title} className="rounded-2xl border border-stone-200 bg-stone-50 p-3">
@@ -283,7 +287,7 @@ export default function SkripsiPage() {
             </div>
           </SectionCard>
 
-          <SectionCard label="Diagram utama" title="Alur kerja Just-in-Time Access">
+          <SectionCard label="Visualisasi" title="Alur kerja Just-in-Time Access">
             <button
               type="button"
               onClick={() => setViewer({ src: thesisMeta.diagramImage, alt: "Diagram alur kerja Just-in-Time Access" })}
@@ -315,7 +319,7 @@ export default function SkripsiPage() {
             </div>
           </SectionCard>
 
-          <SectionCard label="Batasan dan posisi akademik" title="Cara project ini harus dipahami">
+          <SectionCard label="Batasan dan posisi akademik" title="Batasan yang harus dipahami">
             <div className="space-y-3">
               {boundaries.map((item, index) => (
                 <Callout key={`${index}-${item}`} variant={index === 2 ? "gold" : index === 3 ? "green" : "default"}>
