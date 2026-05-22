@@ -82,10 +82,7 @@ const stackItems = [
     title: "Backend",
     body: "Golang dengan Gin dipilih karena ringan dan mendukung middleware chaining, sehingga setiap request dapat diintersepsi untuk validasi kontrol akses seperti RBAC, Least Privilege, dan Just-In-Time sebelum masuk ke business logic."
   },
-  {
-    title: "Frontend",
-    body: "Next.js digunakan untuk membangun antarmuka multi-role, visualisasi alur LP dan JIT, halaman demonstrasi, serta ringkasan skripsi yang responsif pada desktop maupun mobile.",
-  },
+ 
   {
     title: "Database",
     body: "MySQL digunakan sebagai penyimpanan utama untuk users, user profiles, tickets, messages, JIT sessions, audit logs, dan data pendukung skenario akademik.",
@@ -93,6 +90,10 @@ const stackItems = [
   {
     title: "Library Pendukung",
     body: "GORM dipakai sebagai ORM, Gorilla WebSocket untuk realtime, React Query untuk data fetching, Zustand untuk state ringan, Tailwind CSS untuk styling, dan date-fns untuk formatting waktu.",
+  },
+   {
+    title: "Visualisasi Frontend",
+    body: "Next.js digunakan untuk membangun antarmuka multi-role, Sebagai visualisasi alur LP dan JIT",
   },
 ];
 
