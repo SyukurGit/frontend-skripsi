@@ -159,9 +159,7 @@ export default function SkripsiPage() {
 
               <div className="mt-5 flex flex-wrap gap-3">
                 <Link
-                  href="https://www.yt.com"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="/homepage"
                   className="group inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold transition hover:opacity-90"
                   style={{ background: "#b45309", color: "#fff" }}
                 >
