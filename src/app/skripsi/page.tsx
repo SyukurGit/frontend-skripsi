@@ -93,7 +93,7 @@ const stackItems = [
   },
    {
     title: "Visualisasi Frontend",
-    body: "Next.js digunakan untuk membangun antarmuka multi-role, Sebagai visualisasi alur LP dan JIT",
+    body: "Next.js digunakan untuk membangun antarmuka multi-role, Sebagai visualisasi alur LP dan JIT di penulisan skripsi",
   },
 ];
 
