@@ -17,15 +17,15 @@ export default function AdminHome() {
       <Topbar title="Admin Dashboard" subtitle="Ringkasan sistem dan aktivitas pengguna" />
 
       {/* Overview Card */}
-      <section className="rounded-lg border border-slate-200 bg-gradient-to-br from-blue-600 to-blue-700 p-6 text-white sm:p-8">
-        <div className="text-sm font-semibold text-blue-100">Kontrol Sistem</div>
+      <section className="rounded-lg border border-slate-200 bg-gradient-to-br from-teal-600 to-teal-700 p-6 text-white sm:p-8">
+        <div className="text-sm font-semibold text-teal-100">Kontrol Sistem</div>
         <div className="mt-3 text-2xl font-bold">Pantau dan kelola sistem</div>
-        <p className="mt-3 text-sm text-blue-100">
+        <p className="mt-3 text-sm text-teal-100">
           Lihat ikhtisar menyeluruh dari pengguna, tiket, dan aktivitas audit.
         </p>
         <div className="mt-6 flex flex-wrap gap-3">
           <Link href="/admin/logs">
-            <Button className="bg-white text-blue-600 hover:bg-slate-100">Lihat Logs</Button>
+            <Button className="bg-white text-teal-600 hover:bg-slate-100">Lihat Logs</Button>
           </Link>
           <Link href="/admin/users">
             <Button variant="secondary" className="border-white/30 bg-white/10 hover:bg-white/20">Kelola Pengguna</Button>

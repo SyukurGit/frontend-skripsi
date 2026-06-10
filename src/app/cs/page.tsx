@@ -27,17 +27,17 @@ export default function CsHome() {
       <Topbar title="Dashboard Petugas" subtitle="Kelola antrian tiket dan percakapan pelanggan" />
 
       {/* Overview Card */}
-      <section className="rounded-lg border border-slate-200 bg-gradient-to-br from-blue-600 to-blue-700 p-6 text-white sm:p-8">
-        <div className="text-sm font-semibold text-blue-100">Status Penugasan</div>
+      <section className="rounded-lg border border-slate-200 bg-gradient-to-br from-teal-600 to-teal-700 p-6 text-white sm:p-8">
+        <div className="text-sm font-semibold text-teal-100">Status Penugasan</div>
         <div className="mt-3 text-3xl font-bold">
           {activeCount} dari 2 tiket aktif
         </div>
-        <p className="mt-3 text-sm text-blue-100">
+        <p className="mt-3 text-sm text-teal-100">
           Anda dapat menangani maksimal 2 tiket secara bersamaan. Selesaikan tiket yang aktif untuk membuka slot baru.
         </p>
         <div className="mt-6">
           <Link href="/cs/my-tickets">
-            <Button className="bg-white text-blue-600 hover:bg-slate-100">Lihat semua tiket</Button>
+            <Button className="bg-white text-teal-600 hover:bg-slate-100">Lihat semua tiket</Button>
           </Link>
         </div>
       </section>
@@ -114,7 +114,7 @@ export default function CsHome() {
                 <Link
                   key={ticket.id}
                   href={`/cs/tickets/${ticket.id}`}
-                  className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4 hover:border-blue-300 hover:bg-blue-50"
+                  className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4 hover:border-teal-300 hover:bg-teal-50"
                 >
                   <div>
                     <div className="font-semibold text-slate-950">Ticket #{ticket.id}</div>

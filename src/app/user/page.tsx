@@ -25,12 +25,12 @@ export default function UserHome() {
       <Topbar title="Dashboard" subtitle="Saldo dan aktivitas transaksi Anda" />
 
       {/* Balance Overview */}
-      <section className="rounded-lg border border-slate-200 bg-gradient-to-br from-blue-600 to-blue-700 p-6 text-white sm:p-8">
-        <div className="text-sm font-semibold text-blue-100">Saldo Anda</div>
+      <section className="rounded-lg border border-slate-200 bg-gradient-to-br from-teal-600 to-teal-700 p-6 text-white sm:p-8">
+        <div className="text-sm font-semibold text-teal-100">Saldo Anda</div>
         <div className="mt-3 text-4xl font-bold sm:text-5xl">{formatMoneyIDR(balance)}</div>
         <div className="mt-6 flex flex-col gap-3 sm:flex-row">
           <Link href="/user/transactions" className="flex-1">
-            <Button className="w-full bg-white text-blue-600 hover:bg-slate-100">Transaksi</Button>
+            <Button className="w-full bg-white text-teal-600 hover:bg-slate-100">Transaksi</Button>
           </Link>
           <Link href="/user/tickets" className="flex-1">
             <Button variant="secondary" className="w-full border-white/30 bg-white/10 hover:bg-white/20">Support</Button>
@@ -83,7 +83,7 @@ export default function UserHome() {
           <CardBody className="space-y-4 pt-4">
             <p className="text-sm text-slate-600">Butuh bantuan dengan saldo, transaksi, atau akun? Tim customer support kami siap membantu.</p>
             <Link href="/user/tickets">
-              <Button className="w-full">Buka ticket</Button>
+              <Button className="w-full bg-teal-600 hover:bg-teal-700">Buka ticket</Button>
             </Link>
           </CardBody>
         </Card>

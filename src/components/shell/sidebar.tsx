@@ -93,35 +93,42 @@ export function Sidebar() {
 
   return (
     <>
+      {/* Mobile Overlay */}
       <div
-        className={clsx("fixed inset-0 z-40 bg-slate-950/35 backdrop-blur-sm transition md:hidden", mobileOpen ? "opacity-100" : "pointer-events-none opacity-0")}
+        className={clsx("fixed inset-0 z-40 bg-slate-950/40 backdrop-blur-sm transition-opacity md:hidden", mobileOpen ? "opacity-100" : "pointer-events-none opacity-0")}
         onClick={() => setMobileOpen(false)}
       />
+      
+      {/* Sidebar */}
       <aside
         className={clsx(
-          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-200 bg-white px-4 py-5 shadow-sm transition-all md:sticky md:z-20 md:h-screen md:translate-x-0 md:shadow-none",
-          collapsed ? "w-[80px]" : "w-[260px]",
-          mobileOpen ? "translate-x-0" : "-translate-x-full",
+          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-200 bg-white transition-all duration-300 md:sticky md:z-auto md:h-screen md:translate-x-0 md:shadow-none",
+          collapsed ? "w-20" : "w-64",
+          mobileOpen ? "translate-x-0 shadow-lg" : "-translate-x-full md:translate-x-0",
         )}
       >
-        {/* Logo */}
-        <div className="flex items-center justify-between px-2">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-slate-200 px-4 py-5">
           <div className={clsx(collapsed && "mx-auto")}>
-            {!collapsed ? <LogoMark compact /> : <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-xs font-bold text-white">DK</div>}
+            {!collapsed ? <LogoMark compact /> : <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-600 text-xs font-bold text-white">DK</div>}
           </div>
-          <button type="button" onClick={() => setMobileOpen(false)} className="rounded-lg border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 md:hidden">
+          <button 
+            type="button" 
+            onClick={() => setMobileOpen(false)} 
+            className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 md:hidden"
+          >
             ✕
           </button>
         </div>
 
         {/* User Card */}
-        <div className={clsx("mt-6 rounded-lg border border-slate-200 bg-slate-50 p-3", collapsed && "px-2")}>
-          <div className={clsx("flex items-center gap-3", collapsed && "justify-center")}>
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-xs font-semibold text-white">
+        <div className="px-3 py-4">
+          <div className={clsx("flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3", collapsed && "justify-center")}>
+            <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-teal-600 text-xs font-semibold text-white">
               {user.email.slice(0, 1).toUpperCase()}
             </div>
             {!collapsed ? (
-              <div className="min-w-0">
+              <div className="min-w-0 flex-1">
                 <div className="truncate text-xs font-semibold text-slate-950">{user.email}</div>
                 <div className="text-xs text-slate-500">{user.role === "user" ? "Pengguna" : user.role === "cs" ? "Petugas Support" : "Admin"}</div>
               </div>
@@ -130,7 +137,7 @@ export function Sidebar() {
         </div>
 
         {/* Navigation */}
-        <nav className="mt-6 flex-1 space-y-1">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2">
           {items.map((item) => {
             const active = pathname === item.href;
             return (
@@ -139,15 +146,15 @@ export function Sidebar() {
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
                 className={clsx(
-                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                   active 
-                    ? "bg-blue-600 text-white" 
-                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-950",
+                    ? "bg-teal-600 text-white" 
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-900",
                   collapsed && "justify-center px-0",
                 )}
                 title={collapsed ? item.label : undefined}
               >
-                <span className={clsx("flex h-9 w-9 items-center justify-center rounded-lg", active ? "bg-white/20" : "bg-slate-100")}>
+                <span className={clsx("flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-lg", active ? "bg-teal-700/20" : "bg-slate-100")}>
                   <Icon name={item.icon} active={active} />
                 </span>
                 {!collapsed ? <span>{item.label}</span> : null}
@@ -157,19 +164,21 @@ export function Sidebar() {
         </nav>
 
         {/* Logout Button */}
-        <button
-          type="button"
-          onClick={handleLogout}
-          disabled={logout.isPending}
-          className={clsx(
-            "mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60 transition",
-            collapsed && "px-0",
-          )}
-          title={collapsed ? "Logout" : undefined}
-        >
-          <Icon name="shield" active />
-          {!collapsed ? (logout.isPending ? "Logout..." : "Logout") : null}
-        </button>
+        <div className="border-t border-slate-200 px-3 py-4">
+          <button
+            type="button"
+            onClick={handleLogout}
+            disabled={logout.isPending}
+            className={clsx(
+              "inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60 transition-colors",
+              collapsed && "px-0",
+            )}
+            title={collapsed ? "Logout" : undefined}
+          >
+            <Icon name="shield" active />
+            {!collapsed ? (logout.isPending ? "Logout..." : "Logout") : null}
+          </button>
+        </div>
       </aside>
     </>
   );

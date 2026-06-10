@@ -28,23 +28,24 @@ export default function Homepage() {
       </header>
 
       {/* Hero */}
-      <section className="px-4 py-12 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl">
-          <div className="text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
-              DompetKu
-            </h1>
-            <p className="mt-4 text-lg text-slate-600">
-              Dompet digital aman untuk mengelola saldo, transaksi, dan mendapat bantuan kapan pun dibutuhkan.
-            </p>
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-              <Link href="/login/user">
-                <Button className="h-11 px-8">Masuk sebagai Pengguna</Button>
-              </Link>
-              <Link href="/login/staff">
-                <Button variant="secondary" className="h-11 px-8">Masuk sebagai Petugas</Button>
-              </Link>
-            </div>
+      <section className="px-4 py-16 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl text-center">
+          <div className="mb-4 inline-block rounded-full border border-teal-200 bg-teal-50 px-4 py-1.5 text-sm font-semibold text-teal-700">
+            Prototype Demo
+          </div>
+          <h1 className="text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
+            DompetKu
+          </h1>
+          <p className="mt-4 text-lg text-slate-600">
+            Dompet digital aman untuk mengelola saldo, transaksi, dan mendapat bantuan kapan pun dibutuhkan.
+          </p>
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+            <Link href="/login/user">
+              <Button className="h-11 px-8 bg-teal-600 hover:bg-teal-700">Masuk sebagai Pengguna</Button>
+            </Link>
+            <Link href="/login/staff">
+              <Button variant="secondary" className="h-11 px-8">Masuk sebagai Petugas</Button>
+            </Link>
           </div>
         </div>
       </section>
@@ -75,9 +76,16 @@ export default function Homepage() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t border-slate-200 bg-white px-4 py-6 sm:px-6 lg:px-8">
-        <div className="mx-auto max-w-4xl text-center text-sm text-slate-500">
-          <p>DompetKu © 2026 — Sistem dompet digital aman dan terpercaya</p>
+      <footer className="border-t border-slate-200 bg-white px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl">
+          <div className="text-center text-xs text-slate-500">
+            <p className="mb-3">
+              <strong>Prototype Demo</strong> | Sistem Dompet Digital DompetKu
+            </p>
+            <p>
+              Copyright © 2026 — Untuk tujuan demonstrasi akademis. Bukan untuk penggunaan production.
+            </p>
+          </div>
         </div>
       </footer>
     </div>
