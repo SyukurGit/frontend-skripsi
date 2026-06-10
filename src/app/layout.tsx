@@ -13,6 +13,12 @@ export const metadata: Metadata = {
   description: "Platform operasional dompet digital dengan dukungan tiket, chat, dan audit real-time.",
 };
 
+function getRuntimeConfigScript() {
+  const apiBaseUrl = (process.env.APP_API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:8080").replace(/\/$/, "");
+
+  return `window.__APP_CONFIG__ = ${JSON.stringify({ apiBaseUrl })};`;
+}
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -20,6 +26,9 @@ export default function RootLayout({
 }>) {
   return (
       <html lang="id" className={`${appSans.variable} ${appMono.variable} h-full antialiased`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: getRuntimeConfigScript() }} />
+      </head>
       <body className="min-h-full flex flex-col">
         <Providers>
           {children}

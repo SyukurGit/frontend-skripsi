@@ -1,10 +1,10 @@
 import axios, { AxiosError } from "axios";
-import { env } from "@/utils/env";
+import { getApiBaseUrl } from "@/utils/env";
 import { useAuthStore } from "@/store/auth";
 import { useToastStore } from "@/store/toast";
 
 export const api = axios.create({
-  baseURL: env.apiBaseUrl,
+  baseURL: getApiBaseUrl(),
   timeout: 12000,
 });
 

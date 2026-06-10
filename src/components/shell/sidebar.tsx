@@ -62,7 +62,7 @@ function navForRole(role: "admin" | "cs" | "user"): NavItem[] {
     { href: "/user", label: "Dashboard", icon: "home" },
     { href: "/user/transactions", label: "Transaksi", icon: "card" },
     { href: "/user/history", label: "Riwayat", icon: "history" },
-    { href: "/user/tickets", label: "Customer Support", icon: "support" },
+    { href: "/user/tickets", label: "Support", icon: "support" },
   ];
 }
 
@@ -82,11 +82,11 @@ export function Sidebar() {
     try {
       await logout.mutateAsync();
       clear();
-      toast({ kind: "info", title: "Signed out" });
+      toast({ kind: "info", title: "Berhasil logout" });
     } catch (error) {
       const status = (error as { response?: { status?: number } }).response?.status;
       if (status !== 401) {
-        toast({ kind: "error", title: "Sign out failed", detail: getErrorMessage(error, "Logout failed") });
+        toast({ kind: "error", title: "Logout gagal", detail: getErrorMessage(error, "Logout gagal") });
       }
     }
   }
@@ -99,33 +99,38 @@ export function Sidebar() {
       />
       <aside
         className={clsx(
-          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-white/70 bg-white/92 px-4 py-5 shadow-[0_18px_60px_rgba(15,23,42,0.12)] backdrop-blur transition-all md:sticky md:z-20 md:h-screen md:translate-x-0 md:shadow-none",
-          collapsed ? "w-[96px]" : "w-[274px]",
+          "fixed inset-y-0 left-0 z-50 flex flex-col border-r border-slate-200 bg-white px-4 py-5 shadow-sm transition-all md:sticky md:z-20 md:h-screen md:translate-x-0 md:shadow-none",
+          collapsed ? "w-[80px]" : "w-[260px]",
           mobileOpen ? "translate-x-0" : "-translate-x-full",
         )}
       >
-        <div className="flex items-center justify-between px-1">
-          <div className={clsx(collapsed && "mx-auto")}>{!collapsed ? <LogoMark compact /> : <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[linear-gradient(135deg,#335cff,#1d4ed8)] text-sm font-bold text-white">DK</div>}</div>
-          <button type="button" onClick={() => setMobileOpen(false)} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-500 md:hidden">
-            Close
+        {/* Logo */}
+        <div className="flex items-center justify-between px-2">
+          <div className={clsx(collapsed && "mx-auto")}>
+            {!collapsed ? <LogoMark compact /> : <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-xs font-bold text-white">DK</div>}
+          </div>
+          <button type="button" onClick={() => setMobileOpen(false)} className="rounded-lg border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600 hover:bg-slate-50 md:hidden">
+            ✕
           </button>
         </div>
 
-        <div className={clsx("mt-6 rounded-[24px] bg-[linear-gradient(180deg,#eff6ff,#eef2ff)] p-4", collapsed && "px-2") }>
+        {/* User Card */}
+        <div className={clsx("mt-6 rounded-lg border border-slate-200 bg-slate-50 p-3", collapsed && "px-2")}>
           <div className={clsx("flex items-center gap-3", collapsed && "justify-center")}>
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white text-sm font-bold text-blue-700 shadow-sm">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-600 text-xs font-semibold text-white">
               {user.email.slice(0, 1).toUpperCase()}
             </div>
             {!collapsed ? (
               <div className="min-w-0">
-                <div className="truncate text-sm font-semibold text-slate-950">{user.email}</div>
-                <div className="text-xs text-slate-500">{user.role === "user" ? "Pengguna DompetKu" : user.role === "cs" ? "Petugas Support" : "Admin"}</div>
+                <div className="truncate text-xs font-semibold text-slate-950">{user.email}</div>
+                <div className="text-xs text-slate-500">{user.role === "user" ? "Pengguna" : user.role === "cs" ? "Petugas Support" : "Admin"}</div>
               </div>
             ) : null}
           </div>
         </div>
 
-        <nav className="mt-6 flex-1 space-y-1.5">
+        {/* Navigation */}
+        <nav className="mt-6 flex-1 space-y-1">
           {items.map((item) => {
             const active = pathname === item.href;
             return (
@@ -134,13 +139,15 @@ export function Sidebar() {
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
                 className={clsx(
-                  "flex items-center gap-3 rounded-2xl px-3 py-3 text-sm font-medium",
-                  active ? "bg-blue-600 text-white shadow-[0_10px_24px_rgba(37,99,235,0.22)]" : "text-slate-600 hover:bg-slate-100 hover:text-slate-950",
+                  "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition",
+                  active 
+                    ? "bg-blue-600 text-white" 
+                    : "text-slate-600 hover:bg-slate-100 hover:text-slate-950",
                   collapsed && "justify-center px-0",
                 )}
                 title={collapsed ? item.label : undefined}
               >
-                <span className={clsx("flex h-10 w-10 items-center justify-center rounded-2xl", active ? "bg-white/15 text-white" : "bg-slate-100 text-slate-600")}>
+                <span className={clsx("flex h-9 w-9 items-center justify-center rounded-lg", active ? "bg-white/20" : "bg-slate-100")}>
                   <Icon name={item.icon} active={active} />
                 </span>
                 {!collapsed ? <span>{item.label}</span> : null}
@@ -149,26 +156,20 @@ export function Sidebar() {
           })}
         </nav>
 
-        <div className={clsx("mt-6 rounded-[24px] border border-slate-200 bg-slate-50 p-3", collapsed && "px-2") }>
-          {!collapsed ? (
-            <div className="mb-3 rounded-2xl bg-white px-3 py-2 text-xs text-slate-500">
-              {user.role === "user" ? "Fitur bantuan pelanggan tersedia saat Anda membutuhkannya." : "Kelola tiket dan percakapan dari satu panel yang ringkas."}
-            </div>
-          ) : null}
-          <button
-            type="button"
-            onClick={handleLogout}
-            disabled={logout.isPending}
-            className={clsx(
-              "inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-60",
-              collapsed && "px-0",
-            )}
-            title={collapsed ? "Logout" : undefined}
-          >
-            <Icon name="shield" active />
-            {!collapsed ? (logout.isPending ? "Signing out..." : "Logout") : null}
-          </button>
-        </div>
+        {/* Logout Button */}
+        <button
+          type="button"
+          onClick={handleLogout}
+          disabled={logout.isPending}
+          className={clsx(
+            "mt-6 inline-flex w-full items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-60 transition",
+            collapsed && "px-0",
+          )}
+          title={collapsed ? "Logout" : undefined}
+        >
+          <Icon name="shield" active />
+          {!collapsed ? (logout.isPending ? "Logout..." : "Logout") : null}
+        </button>
       </aside>
     </>
   );
