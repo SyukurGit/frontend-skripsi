@@ -53,9 +53,9 @@ function navForRole(role: "admin" | "cs" | "user"): NavItem[] {
   }
   if (role === "cs") {
     return [
-      { href: "/cs", label: "Dashboard", icon: "home" },
-      { href: "/cs/my-tickets", label: "Tickets", icon: "ticket" },
-      { href: "/cs/chat", label: "Chat", icon: "chat" },
+      { href: "/cs", label: "Antrian Ticket", icon: "ticket" },
+      { href: "/cs/my-tickets", label: "Ticket Saya", icon: "ticket" },
+      { href: "/cs/chat", label: "Chat Ticket", icon: "chat" },
     ];
   }
   return [
@@ -134,6 +134,16 @@ export function Sidebar() {
               </div>
             ) : null}
           </div>
+          {user.role === "cs" && !collapsed ? (
+            <div className="mt-3 rounded-lg border border-teal-100 bg-teal-50 p-3">
+              <div className="text-[11px] font-bold uppercase tracking-[0.18em] text-teal-700">Least Privilege</div>
+              <div className="mt-1 text-sm font-semibold text-slate-950">Ticket Management Only</div>
+              <div className="mt-2 space-y-1 text-xs leading-5 text-slate-600">
+                <div>Akses kerja CS dibatasi pada konteks ticket yang ditugaskan.</div>
+                <div className="font-medium text-rose-700">Tidak ada lihat semua user, data user, atau fitur lain.</div>
+              </div>
+            </div>
+          ) : null}
         </div>
 
         {/* Navigation */}

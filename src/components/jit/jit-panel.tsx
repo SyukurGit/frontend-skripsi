@@ -10,6 +10,7 @@ import { useToastStore } from "@/store/toast";
 import { getErrorMessage } from "@/utils/api-error";
 import { formatDurationMs } from "@/utils/format";
 import { useCountdown } from "@/hooks/use-countdown";
+import type { TicketStatus } from "@/types/api";
 
 type StepState = "idle" | "checking" | "passed" | "failed";
 
@@ -25,7 +26,7 @@ const features: { key: JitFeature; label: string }[] = [
   { key: "VIEW_KYC", label: "Open Full KYC" },
 ];
 
-export function JitPanel({ ticketId }: { ticketId: number }) {
+export function JitPanel({ ticketId, ticketStatus }: { ticketId: number; ticketStatus?: TicketStatus }) {
   const toast = useToastStore((s) => s.push);
   const req = useRequestJit(ticketId);
   const set = useJitStore((s) => s.set);
@@ -43,6 +44,7 @@ export function JitPanel({ ticketId }: { ticketId: number }) {
   const countdown = useCountdown(targetEpochMs);
 
   const active = isActive(ticketId, feature);
+  const canRequestJit = ticketStatus === "IN_PROGRESS";
 
   React.useEffect(() => {
     if (!session) return;
@@ -62,6 +64,13 @@ export function JitPanel({ ticketId }: { ticketId: number }) {
   const [newPin, setNewPin] = React.useState("");
 
   async function request() {
+    if (!canRequestJit) {
+      setLastDecision("rejected");
+      setDecisionMessage("Status tiket harus IN_PROGRESS sebelum backend dapat memberikan sesi JIT.");
+      setStepStates(["passed", "failed", "idle", "idle", "idle"]);
+      toast({ kind: "error", title: "Permintaan JIT ditolak", detail: "Ubah status tiket ke IN_PROGRESS terlebih dahulu." });
+      return;
+    }
     setLastDecision("idle");
     setDecisionMessage("");
     setStepStates(["checking", "idle", "idle", "idle", "idle"]);
@@ -96,7 +105,7 @@ export function JitPanel({ ticketId }: { ticketId: number }) {
 
   const explanationSteps = [
     { label: "Sistem memverifikasi bahwa tiket ini benar-benar ditugaskan kepada CS yang sedang login", hint: "Pada tahap ini, pembatasan akses sudah bergerak melampaui RBAC dasar karena backend juga menilai konteks penugasan." },
-    { label: "Sistem memeriksa apakah status tiket masih berada dalam kondisi aktif untuk penanganan", hint: "Permintaan akses tidak dapat diproses jika tiket sudah tidak relevan secara operasional." },
+    { label: "Sistem memeriksa apakah status tiket sudah IN_PROGRESS", hint: canRequestJit ? "Status tiket sudah memenuhi syarat untuk permintaan akses sementara." : "Ubah status tiket ke IN_PROGRESS sebelum mengajukan akses sementara." },
     { label: "Sistem memvalidasi bahwa fitur sensitif yang diminta sesuai dengan daftar kontrol yang diizinkan", hint: `Permintaan yang sedang diuji pada sesi ini adalah ${feature}.` },
     { label: "Jika semua syarat lolos, backend membentuk sesi Just-In-Time sementara", hint: active ? `Sesi saat ini sedang aktif dengan sisa waktu ${formatDurationMs(countdown)}.` : "Sesi ini bersifat sementara dan tidak menambah hak akses permanen pada akun CS." },
     { label: "Ketika waktu habis atau tiket ditutup, sesi akan dicabut secara otomatis oleh backend", hint: "Inilah implementasi pembatasan durasi akses yang menjadi inti mekanisme JIT." },
@@ -131,11 +140,16 @@ export function JitPanel({ ticketId }: { ticketId: number }) {
             </div>
           </div>
           <div className="flex items-end">
-            <Button className="w-full" onClick={request} disabled={req.isPending}>
-              {req.isPending ? "Memproses permintaan..." : "Ajukan akses sementara"}
+            <Button className="w-full" onClick={request} disabled={req.isPending || !canRequestJit}>
+              {req.isPending ? "Memproses permintaan..." : canRequestJit ? "Ajukan akses sementara" : "Butuh IN_PROGRESS"}
             </Button>
           </div>
         </div>
+        {!canRequestJit ? (
+          <div className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            Sesuai rancangan skripsi, JIT hanya dapat diajukan setelah tiket berstatus IN_PROGRESS.
+          </div>
+        ) : null}
 
         <div className="mt-6 rounded-3xl border border-blue-100 bg-blue-50/80 p-5">
             <div className="text-sm font-semibold text-slate-950">Urutan validasi backend sebelum akses diberikan</div>
@@ -187,6 +201,7 @@ export function JitPanel({ ticketId }: { ticketId: number }) {
                       try {
                         await resetPwd.mutateAsync({ new_password: newPassword });
                         setNewPassword("");
+                        clear(ticketId, "RESET_PASSWORD");
                         toast({ kind: "success", title: "Password berhasil direset" });
                       } catch (error) {
                         toast({ kind: "error", title: "Reset password gagal", detail: getErrorMessage(error, "Reset password gagal") });
@@ -208,6 +223,7 @@ export function JitPanel({ ticketId }: { ticketId: number }) {
                     onClick={async () => {
                       try {
                         await unblock.mutateAsync({});
+                        clear(ticketId, "UNBLOCK_ACCOUNT");
                         toast({ kind: "success", title: "Akun berhasil dibuka blokirnya" });
                       } catch (error) {
                         toast({ kind: "error", title: "Buka blokir gagal", detail: getErrorMessage(error, "Buka blokir gagal") });
@@ -230,6 +246,7 @@ export function JitPanel({ ticketId }: { ticketId: number }) {
                       try {
                         await changeEmail.mutateAsync({ new_email: newEmail });
                         setNewEmail("");
+                        clear(ticketId, "CHANGE_EMAIL");
                         toast({ kind: "success", title: "Email berhasil diperbarui" });
                       } catch (error) {
                         toast({ kind: "error", title: "Perubahan email gagal", detail: getErrorMessage(error, "Perubahan email gagal") });
@@ -252,6 +269,7 @@ export function JitPanel({ ticketId }: { ticketId: number }) {
                       try {
                         await resetPin.mutateAsync({ new_pin: newPin });
                         setNewPin("");
+                        clear(ticketId, "RESET_PIN");
                         toast({ kind: "success", title: "PIN berhasil direset" });
                       } catch (error) {
                         toast({ kind: "error", title: "Reset PIN gagal", detail: getErrorMessage(error, "Reset PIN gagal") });

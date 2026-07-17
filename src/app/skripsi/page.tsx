@@ -1,474 +1,567 @@
 /* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
+import { useEffect, useState } from "react";
 
 const thesisMeta = {
-  title: "Implementasi Mekanisme Least Privilege dan Just-in-Time Access pada Layer Kontrol Akses Pengguna Internal dalam Prototipe Sistem Dompet Digital",
-  projectName: "Judul Skripsi :",
+  title:
+    "Implementasi Mekanisme Least Privilege dan Just-in-Time Access pada Layer Kontrol Akses Pengguna Internal dalam Prototipe Sistem Dompet Digital",
   author: "Muhammad Syukur",
   studentId: "220705058",
   studyProgram: "Teknologi Informasi",
-  campus: "Uin Ar-Raniry Banda Aceh",
-  advisor: "Ghufran Ibnu Yasa, M.T",
-  advisor2: "Mulkan Fadhli, M.T",
+  campus: "UIN Ar-Raniry Banda Aceh",
+  advisor: "Ghufran Ibnu Yasa, M.T.",
+  advisor2: "Mulkan Fadhli, S.T., M.T.",
   buildDate: "2026",
   profileImage: "/images/skripsi/pp2.jpg",
-  diagramImage: "/images/skripsi/d1.png",
+  jitDiagramImage: "/images/skripsi/d1.png",
   githubPrimary: "https://github.com/SyukurGit/backend-skripsi",
   githubSecondary: "https://github.com/SyukurGit/frontend-skripsi",
   driveLink: "https://drive.google.com/drive/folders/-",
 };
 
-const keyPoints = [
+const navItems = [
+  { label: "Ringkasan", href: "#ringkasan" },
+  { label: "Mekanisme", href: "#mekanisme" },
+  { label: "Pengujian", href: "#pengujian" },
+  { label: "Lampiran", href: "#lampiran" },
+];
+
+const quickFacts: any[] = [
+
+];
+
+const researchSummary = [
   {
-    label: "Masalah utama",
-    value: "Penyalahgunaan Internal / Insider Threat",
-    description: "Risiko muncul dari Peran atau ROLE pengguna internal sistem yang memiliki kredensial sah, tetapi berpotensi mengakses atau mengubah data di luar kebutuhan tugasnya.",
+    label: "Masalah",
+    title: "Akses internal dapat sah, tetapi tetap terlalu luas.",
+    body: "RBAC memisahkan area berdasarkan role, namun belum otomatis membatasi data sesuai tugas dan durasi penggunaan fitur sensitif.",
   },
   {
-    label: "Kelemahan dasar",
-    value: "RBAC Saja Belum Cukup",
-    description: "Role seperti RBAC dapat membatasi area kerja berdasarkan Peran, tetapi belum otomatis membatasi seberapa sempit data yang boleh diakses dan berapa lama dan juga kapan akses sensitif boleh aktif.",
+    label: "Pendekatan",
+    title: "RBAC diperkuat dengan pembatas konteks dan waktu.",
+    body: "Least Privilege membatasi Customer Support berdasarkan assignment ticket. JIT membuka fitur sensitif melalui session sementara yang spesifik.",
   },
   {
-    label: "Solusi yang diusulkan",
-    value: "Least Privilege + JIT",
-    description: "Least Privilege mempersempit lingkup akses, sedangkan Just-in-Time Access membatasi durasi akses sensitif agar tidak terus aktif permanen. Kedua ini bukan konsep baru, tetapi sudah umum digunakan pada level infrastruktur sistem dan masih jarang dibahas dalam level aplikasi kontrol.",
-  },
-  {
-    label: "Media representasi",
-    value: "Prototipe Dompet Digital",
-    description: "Prototipe dompet digital dipilih sebagai gambaran implementasi karena pengguna internal seperti role support teknis mengelola langsung data sensitif seperti KYC, status akun, dan riwayat aktivitas yang berpotensi disalahgunakan dari sisi internal dan juga relevan dengan skenario penelitian.",
+    label: "Hasil",
+    title: "Kontrol berlapis berjalan sesuai rancangan prototipe.",
+    body: "Seluruh 19 skenario menghasilkan keputusan terima atau tolak sesuai hasil yang diharapkan pada pengujian backend.",
   },
 ];
 
-const problemItems = [
-  "Dalam sistem digital yang mengelola data sensitif, berbagai aktivitas pengguna ditangani langsung melalui aplikasi, termasuk informasi identitas, status akun, dan riwayat aktivitas. Untuk mendukung operasional tersebut, sistem tetap memerlukan peran pengguna internal seperti Customer Service dalam dompet digital yang menangani bantuan teknis pada level aplikasi.",
-
-  "Akses sistem diberikan secara sah agar operasional dapat berjalan, namun dalam praktiknya sering kali tidak dibatasi secara spesifik berdasarkan kebutuhan tugas yang sedang dikerjakan. Pengguna internal dapat memiliki hak akses yang luas dan aktif secara terus-menerus, meskipun tidak selalu diperlukan dalam setiap kondisi.",
-
-  "Kondisi ini membuat aktivitas yang menyimpang atau penyalahgunaan akses sulit dibedakan dari aktivitas normal karena dilakukan menggunakan akses yang valid. Permasalahan ini dikenal sebagai insider threat, yaitu risiko keamanan yang berasal dari pengguna internal yang memiliki kredensial resmi, yang muncul akibat lemahnya pembatasan akses pada design kontrol level aplikasi."
-];
-
-const researchFocus = [
-  "Mengidentifikasi kebutuhan kontrol akses pengguna internal melalui pemodelan peran, data sensitif, dan fitur sistem pada prototipe dompet digital.",
-  "Menerapkan Least Privilege untuk mempersempit akses berdasarkan konteks ticket, bukan sekadar berdasarkan role pengguna.",
-  "Menerapkan Just-in-Time Access untuk mengaktifkan fitur sensitif hanya saat dibutuhkan dan hanya untuk durasi yang terbatas.",
-  "Mengevaluasi hasil penerapan melalui logs, terminal logs, transparansi user, dan skenario pengujian penyalahgunaan akses melalui postman.",
-];
-
-const contributions = [
+const mechanismLayers = [
   {
-    title: "Kontribusi utama",
-    body: "Penelitian ini berangkat dari fakta bahwa pembahasan kontrol akses seperti Least Privilege dan Just-In-Time Access umumnya sering dibahas pada level infrastruktur dan masih jarang dibahas dan juga diterapkan pada level aplikasi. Oleh karena itu, pendekatan tersebut dibawa langsung ke layer aplikasi sebagai titik interaksi terhadap data sensitif. Keduanya dikombinasikan dan diimplementasikan dalam alur sistem, serta direpresentasikan melalui prototipe dompet digital sebagai media untuk memvisualisasikan praktik kontrol akses internal yang selama ini cenderung tertutup di industri dan jarang dibahas secara akademik.",
-    accent: "blue",
+    number: "01",
+    title: "RBAC",
+    subtitle: "Siapa boleh masuk?",
+    body: "Memisahkan endpoint User, Customer Support, dan Administrator berdasarkan role pada JWT.",
   },
   {
-    title: "Konteks penelitian",
-    body: "Dompet digital digunakan sebagai media representasi agar konsep kontrol akses dapat digambarkan pada lingkungan yang relevan dengan data sensitif, seperti KYC, status akun, dan riwayat aktivitas pengguna, tanpa harus membangun platform fintech secara penuh. Dalam konteks ini, penelitian menegaskan bahwa RBAC statis saja tidak cukup. Akses tidak hanya ditentukan oleh peran, tetapi juga oleh konteks kerja seperti ticket aktif, status penanganan, serta dibatasi oleh durasi akses sensitif yang bersifat sementara pada kondisi tertentu.",
-    accent: "amber",
+    number: "02",
+    title: "Least Privilege",
+    subtitle: "Ticket mana boleh diakses?",
+    body: "Memeriksa assigned_cs_id dan konteks ticket agar CS tidak memperoleh akses global ke seluruh pengguna.",
   },
   {
-    title: "Batasan project",
-    body: "Project ini adalah prototipe akademik. Fokusnya bukan menyaingi sistem finansial besar sudah ada atau menawarkan metode baru sepenuhnya, melainkan mengakademiskan praktik keamanan yang umumnya tertutup di industri ke dalam bentuk ranah akademik yang dapat diamati, diuji, dan dijelaskan secara terbuka.",
-    accent: "slate",
+    number: "03",
+    title: "Just-in-Time Access",
+    subtitle: "Fitur apa dan sampai kapan?",
+    body: "Mengikat session pada CS, ticket, feature, status aktif, dan expired_at sebelum fitur sensitif dijalankan.",
   },
 ];
 
-const stackItems = [
+const operationalFlow = [
+  "User membuat ticket bantuan.",
+  "CS melakukan claim dan menjadi penanggung jawab ticket.",
+  "Backend memvalidasi role, assignment, serta status ticket.",
+  "CS meminta JIT untuk feature sensitif tertentu.",
+  "Session digunakan satu kali, lalu tidak dapat dipakai kembali.",
+];
+
+const testGroups = [
   {
-    title: "Backend",
-    body: "Golang dengan Gin dipilih karena ringan dan mendukung middleware chaining, sehingga setiap request dapat diintersepsi untuk validasi kontrol akses seperti RBAC, Least Privilege, dan Just-In-Time sebelum masuk ke business logic."
-  },
- 
-  {
-    title: "Database",
-    body: "MySQL digunakan sebagai penyimpanan utama untuk users, user profiles, tickets, messages, JIT sessions, audit logs, dan data pendukung skenario akademik.",
+    name: "RBAC",
+    score: "7/7",
+    description: "Akses sesuai role diterima dan akses lintas role ditolak.",
   },
   {
-    title: "Library Pendukung",
-    body: "GORM dipakai sebagai ORM, Gorilla WebSocket untuk realtime, React Query untuk data fetching, Zustand untuk state ringan, Tailwind CSS untuk styling, dan date-fns untuk formatting waktu.",
+    name: "Least Privilege",
+    score: "5/5",
+    description: "Claim serta detail ticket dibatasi berdasarkan assignment CS.",
   },
-   {
-    title: "Visualisasi Frontend",
-    body: "Next.js digunakan untuk membangun antarmuka sistem sebagai gambaran visualisasi alur LP dan JIT di penulisan skripsi",
+  {
+    name: "Just-in-Time Access",
+    score: "7/7",
+    description: "Session, feature, konteks ticket, dan waktu divalidasi sebelum eksekusi.",
+  },
+];
+
+const visualEvidence = [
+  {
+    title: "Sebelum penguatan Least Privilege",
+    image: "/images/skripsi/sebelum.png",
+    caption: "RBAC dasar masih berpotensi memberi lingkup akses yang terlalu luas.",
+  },
+  {
+    title: "Setelah penguatan Least Privilege",
+    image: "/images/skripsi/sesudah.png",
+    caption: "Akses dipersempit ke ticket yang benar-benar ditugaskan kepada CS.",
+  },
+  {
+    title: "Alur validasi Just-in-Time Access",
+    image: thesisMeta.jitDiagramImage,
+    caption: "Fitur sensitif hanya dijalankan setelah session dan konteks dinyatakan valid.",
   },
 ];
 
 const boundaries = [
-  "Project ini tidak ditujukan untuk membangun sistem dompet digital komersial yang lengkap secara bisnis maupun operasional.",
-  "Penelitian difokuskan pada layer kontrol akses aplikasi, bukan pada keamanan jaringan, sistem operasi, infrastruktur cloud, atau performa skala produksi.",
-  "Project ini tidak dimaksudkan untuk menandingi implementasi platform fintech besar di dunia nyata. Masing-masing institusi sangat mungkin memiliki mekanisme yang lebih kompleks, lebih matang, dan bersifat tertutup.",
-  "Kontribusi utama project ini adalah mengakademiskan praktik kontrol akses internal yang selama ini lebih banyak hadir di level industri, tetapi masih minim dijelaskan secara terbuka dalam bentuk implementasi dalam level layer kontrol aplikasi yang dapat diamati dan diuji.",
-];
-
-const diagramSteps = [
-  "Role Customer Service membuka halaman detail ticket dan mengajukan request akses sementara untuk fitur sensitif tertentu.",
-
-  "Backend melakukan validasi secara berurutan, mulai dari pengecekan apakah nomor ticket valid, status ticket masih aktif (open/in progress), serta memastikan ticket tersebut memang di-assign kepada Customer Service yang sedang login.",
-
-  "Jika seluruh validasi berhasil, backend mengaktifkan sesi Just-in-Time dan membuka akses sensitif hanya dalam durasi terbatas, misalnya 15 menit, agar akses tidak bersifat permanen.",
-
-  "Selama sesi berlangsung, Customer Service hanya dapat mengakses data dan fungsi yang relevan dengan ticket yang sedang ditangani, sementara seluruh aktivitas dan keputusan sistem dicatat ke audit log dan terminal log.",
-
-  "Ketika durasi habis, ticket ditutup, atau Customer Service keluar dari sesi ticket, backend akan melakukan auto-revoke untuk mencabut akses sensitif secara otomatis agar tidak berubah menjadi standing privilege.",
+  "Prototipe bukan sistem dompet digital komersial lengkap dan tidak mencakup integrasi pembayaran nyata.",
+  "Evaluasi berfokus pada backend enforcement, bukan keamanan jaringan, server, atau deployment production.",
+  "Hasil 19/19 menunjukkan kesesuaian implementasi dengan rancangan, bukan keamanan absolut.",
 ];
 
 const resources = [
-  { label: "GitHub Repository Backend", href: thesisMeta.githubPrimary },
-  { label: "GitHub Repository Frontend", href: thesisMeta.githubSecondary },
-  { label: "Google Drive Dokumen Skripsi", href: thesisMeta.driveLink },
-];
-
-const lpDiagramItems = [
   {
-    title: "Kondisi sebelum penerapan Least Privilege",
-    image: "/images/skripsi/sebelum.png",
-    caption:
-      "Pada kondisi merupakan gambaran design kontrol akses yang hanya mengandalkan RBAC statis pada umumnya, dimana role seperti CS setelah login langsung memiliki akses yang luas dan terus aktif terhadap berbagai fitur dan data sensitif, tanpa pembatasan berdasarkan konteks yang spesifik.",
+    label: "Repository Backend",
+    description: "API, middleware, assignment ticket, JIT session, dan audit log.",
+    href: thesisMeta.githubPrimary,
   },
   {
-    title: "Kondisi setelah penerapan Least Privilege",
-    image: "/images/skripsi/sesudah.png",
-    caption:
-      "Setelah penerapan Least Privilege, akses pada menu yang tersedia setelah Customer Service login, dipersempit berdasarkan konteks ticket yang sedang diambil dan tangani. Data dan fungsi sensitif hanya dapat diakses setelah backend memverifikasi bahwa ticket masih valid, aktif, dan memang ditugaskan kepada Customer Service yang sedang menangani ticket tersebut."
+    label: "Repository Frontend",
+    description: "Antarmuka demonstrasi dan alur penggunaan prototipe.",
+    href: thesisMeta.githubSecondary,
+  },
+  {
+    label: "Dokumen dan Lampiran",
+    description: "Draft skripsi, bukti pengujian, dan dokumen pendukung.",
+    href: thesisMeta.driveLink,
   },
 ];
 
 export default function SkripsiPage() {
   const [viewer, setViewer] = useState<{ src: string; alt: string } | null>(null);
 
+  useEffect(() => {
+    if (!viewer) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const closeWithEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setViewer(null);
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", closeWithEscape);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", closeWithEscape);
+    };
+  }, [viewer]);
+
   return (
-    <div className="min-h-screen bg-[linear-gradient(180deg,#f7f4ef_0%,#fbfaf7_45%,#f3efe8_100%)] px-4 py-8 sm:px-6 lg:px-10">
-      <div className="mx-auto max-w-6xl space-y-6">
-        <section className="overflow-hidden rounded-[32px] border border-stone-200 bg-[linear-gradient(135deg,#101828_0%,#233044_48%,#4c3d2b_100%)] text-white shadow-[0_28px_70px_rgba(15,23,42,0.16)]">
-          <div className="grid gap-8 px-6 py-8 sm:px-8 lg:grid-cols-[1.25fr_0.75fr] lg:px-10 lg:py-10">
-            <div className="flex min-w-0 flex-col justify-center">
-              <div className="inline-flex w-fit rounded-full border border-amber-400/30 bg-amber-400/10 px-4 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-200">
-                Ringkasan akademik skripsi
-              </div>
-              <div className="mt-5 text-xs font-semibold uppercase tracking-[0.24em] text-stone-300">{thesisMeta.projectName}</div>
-              <h1 className="mt-3 text-2xl font-bold leading-snug text-stone-50 sm:text-3xl lg:text-4xl" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
-                {thesisMeta.title}
-              </h1>
-              <p className="mt-5 max-w-3xl text-sm leading-8 text-stone-300 sm:text-base">
-                Halaman ini disusun untuk membantu dosen maupun pembaca memahami inti skripsi secara cepat: masalah yang diangkat, alasan pemilihan pendekatan, konteks prototipe yang digunakan, kontribusi implementasi, batasan, serta arah evaluasi yang dilakukan pada project ini.
-              </p>
+    <main className="min-h-screen bg-[#f4f1ea] text-[#183142]">
+      <header className="sticky top-0 z-40 border-b border-[#d9d5cc] bg-[#f4f1ea]/95 backdrop-blur-xl">
+        <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
+          <a href="#top" className="min-w-0" aria-label="Kembali ke bagian atas">
+            <p className="truncate text-sm font-extrabold tracking-tight text-[#183142]">Tugas Akhir Muhammad Syukur</p>
+            <p className="text-[11px] font-semibold text-[#66756f]">Teknologi Informasi · 2026</p>
+          </a>
 
-              <div className="mt-5 flex flex-wrap gap-3">
-                <Link
-                  href="/homepage"
-                  className="group inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold transition hover:opacity-90"
-                  style={{ background: "#b45309", color: "#fff" }}
-                >
-                  Buka Demo Project
-                  <span aria-hidden="true" className="text-base leading-none transition-transform group-hover:translate-x-0.5">→</span>
-                </Link>
-                <Link
-                  href="#lampiran"
-                  className="inline-flex h-11 items-center gap-2 rounded-xl px-5 text-sm font-semibold transition hover:opacity-85"
-                  style={{ border: "1px solid rgba(255,255,255,0.18)", color: "#e2e8f0", background: "transparent" }}
-                >
-                  Dokumen dan Lampiran
-                </Link>
-              </div>
-            </div>
-
-            <div className="ml-auto w-full max-w-[430px] space-y-4">
-              <div className="rounded-[24px] border border-white/10 bg-white/6 p-5 backdrop-blur-sm">
-                <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-stone-400">Identitas penulis</div>
-                <div className="space-y-2.5">
-                  <MetaRow label="Nama" value={thesisMeta.author} />
-                  <MetaRow label="NIM" value={thesisMeta.studentId} />
-                  <MetaRow label="Program Studi" value={thesisMeta.studyProgram} />
-                  <MetaRow label="Institusi" value={thesisMeta.campus} />
-                  <MetaRow label="Pembimbing 1" value={thesisMeta.advisor} />
-                  <MetaRow label="Pembimbing 2" value={thesisMeta.advisor2} />
-                  <MetaRow label="Tahun" value={thesisMeta.buildDate} />
-                </div>
-              </div>
-
-              <button
-                type="button"
-                onClick={() => setViewer({ src: thesisMeta.profileImage, alt: "Foto profil penulis skripsi" })}
-                className="block w-full overflow-hidden rounded-[24px] border border-white/10 bg-white/6 p-3 text-left backdrop-blur-sm transition hover:opacity-95"
+          <nav className="ml-auto hidden items-center gap-1 md:flex" aria-label="Navigasi halaman">
+            {navItems.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                className="rounded-lg px-3 py-2 text-sm font-bold text-[#52645f] transition hover:bg-white/70 hover:text-[#183142]"
               >
-                <img src={thesisMeta.profileImage} alt="Foto profil penulis skripsi" className="h-56 w-full rounded-[18px] object-cover" />
-                <div className="mt-3 text-xs text-stone-300">Klik gambar untuk memperbesar tampilan foto profil.</div>
-              </button>
+                {item.label}
+              </a>
+            ))}
+          </nav>
+
+          <Link
+            href="/homepage"
+            className="ml-auto inline-flex h-10 flex-none items-center justify-center rounded-xl bg-[#0f766e] px-4 text-sm font-extrabold text-white transition hover:bg-[#0b5f59] md:ml-3"
+          >
+            Lihat Prototipe
+          </Link>
+        </div>
+
+        <nav className="overflow-x-auto border-t border-[#e5e1d8] px-4 py-2 md:hidden" aria-label="Navigasi halaman mobile">
+          <div className="mx-auto flex w-max gap-1">
+            {navItems.map((item) => (
+              <a
+                key={item.href}
+                href={item.href}
+                className="whitespace-nowrap rounded-lg px-3 py-1.5 text-xs font-extrabold text-[#52645f] hover:bg-white/70"
+              >
+                {item.label}
+              </a>
+            ))}
+          </div>
+        </nav>
+      </header>
+
+      <section id="top" className="scroll-mt-28 border-b border-[#213d4f] bg-[#102a3a] text-white">
+        <div className="mx-auto grid max-w-7xl gap-8 px-4 py-10 sm:px-6 sm:py-14 lg:grid-cols-[minmax(0,1.25fr)_minmax(310px,.75fr)] lg:px-8 lg:py-16">
+          <div className="flex flex-col justify-center">
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-[#88d5c9]">Judul Tugas Akhir</p>
+            <h1
+              className="mt-4 max-w-5xl text-3xl font-bold leading-[1.16] tracking-[-0.025em] text-white sm:text-4xl lg:text-[46px]"
+              style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}
+            >
+              {thesisMeta.title}
+            </h1>
+
+            <p className="mt-6 max-w-3xl text-sm leading-7 text-[#d6e0e3] sm:text-base sm:leading-8">
+              Implementasi kontrol akses berlapis pada backend untuk membatasi <strong className="text-white">lingkup akses</strong> pengguna internal melalui assignment ticket dan membatasi <strong className="text-white">fitur serta durasi akses sensitif</strong> melalui session Just-in-Time.
+            </p>
+
+            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
+              <Link
+                href="/homepage"
+                className="inline-flex h-12 items-center justify-center rounded-xl bg-[#0f766e] px-6 text-sm font-extrabold text-white transition hover:bg-[#13867d]"
+              >
+                Lihat Prototipe
+              </Link>
+              <a
+                href="#ringkasan"
+                className="inline-flex h-12 items-center justify-center rounded-xl border border-white/20 px-6 text-sm font-extrabold text-white transition hover:bg-white/10"
+              >
+                Baca Ringkasan
+              </a>
             </div>
           </div>
 
-          <div className="border-t border-white/10 px-6 pb-8 pt-7 sm:px-8 lg:px-10">
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              {keyPoints.map((item) => (
-                <KeyPointCard key={item.label} item={item} />
-              ))}
+          <aside className="rounded-[24px] border border-white/15 bg-white/[0.07] p-4 sm:p-5">
+            <div className="grid grid-cols-[108px_1fr] gap-4 sm:grid-cols-[126px_1fr]">
+              <button
+                type="button"
+                onClick={() => setViewer({ src: thesisMeta.profileImage, alt: `Foto ${thesisMeta.author}` })}
+                className="overflow-hidden rounded-2xl border border-white/15 bg-white/10 text-left transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-[#88d5c9]"
+                aria-label="Perbesar foto penulis"
+              >
+                <img
+                  src={thesisMeta.profileImage}
+                  alt={`Foto ${thesisMeta.author}`}
+                  className="h-full min-h-[148px] w-full object-cover"
+                />
+              </button>
+
+              <div className="min-w-0 py-1">
+                <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[#88d5c9]">Identitas Penulis</p>
+                <h2 className="mt-2 text-xl font-extrabold text-white">{thesisMeta.author}</h2>
+                <p className="mt-1 text-sm font-semibold text-[#c8d5d9]">NIM {thesisMeta.studentId}</p>
+                <div className="mt-4 space-y-2 border-t border-white/10 pt-4 text-xs leading-5 text-[#c8d5d9]">
+                  <p>{thesisMeta.studyProgram}</p>
+                  <p>{thesisMeta.campus}</p>
+                  <p>Tahun {thesisMeta.buildDate}</p>
+                </div>
+              </div>
+            </div>
+
+            <dl className="mt-5 grid gap-3 border-t border-white/10 pt-5 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+              <MetaItem label="Pembimbing I" value={thesisMeta.advisor} />
+              <MetaItem label="Pembimbing II" value={thesisMeta.advisor2} />
+            </dl>
+          </aside>
+        </div>
+      </section>
+
+      <section className="relative z-10 mx-auto -mt-4 max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="grid overflow-hidden rounded-[22px] border border-[#ddd9d0] bg-white shadow-[0_14px_40px_rgba(24,49,66,0.08)] sm:grid-cols-2 lg:grid-cols-4">
+          {quickFacts.map((item) => (
+            <article key={item.label} className="border-b border-[#ece8df] p-5 last:border-b-0 sm:[&:nth-child(odd)]:border-r lg:border-b-0 lg:border-r lg:last:border-r-0">
+              <p className="text-2xl font-black tracking-tight text-[#0f766e]">{item.value}</p>
+              <p className="mt-1 text-sm font-extrabold text-[#183142]">{item.label}</p>
+              <p className="mt-1 text-xs leading-5 text-[#6b7773]">{item.note}</p>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <div className="mx-auto max-w-7xl space-y-16 px-4 py-14 sm:px-6 sm:py-16 lg:px-8 lg:py-20">
+        <section id="ringkasan" className="scroll-mt-32">
+          <SectionHeading
+            eyebrow="Ringkasan penelitian"
+            title="Masalah, pendekatan, dan hasil dalam satu alur baca"
+            description="Bagian ini sengaja dibuat singkat agar pembaca memahami posisi penelitian sebelum melihat detail teknis."
+          />
+
+          <div className="mt-7 grid gap-4 lg:grid-cols-3">
+            {researchSummary.map((item, index) => (
+              <article key={item.label} className="rounded-[22px] border border-[#ddd9d0] bg-white p-6 shadow-sm">
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-[#0f766e]">{item.label}</p>
+                  <span className="text-sm font-black text-[#b78a43]">0{index + 1}</span>
+                </div>
+                <h3 className="mt-5 text-xl font-extrabold leading-snug text-[#183142]">{item.title}</h3>
+                <p className="mt-3 text-sm leading-7 text-[#5f6d69]">{item.body}</p>
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-5 grid gap-5 rounded-[24px] border border-[#cfdad6] bg-[#edf5f2] p-6 lg:grid-cols-[1fr_1fr] lg:p-7">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#0f766e]">Metode</p>
+              <p className="mt-3 text-sm leading-7 text-[#324b4b]">
+                Penelitian terapan berbasis prototipe dengan scenario-based black-box testing. Evaluasi dilakukan melalui respons API, perubahan database, serta audit log dan terminal log sebagai bukti pendukung.
+              </p>
+            </div>
+            <div className="border-t border-[#cad9d5] pt-5 lg:border-l lg:border-t-0 lg:pl-7 lg:pt-0">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#0f766e]">Klaim yang tepat</p>
+              <p className="mt-3 text-sm font-bold leading-7 text-[#183f3c]">
+                Kombinasi RBAC, Least Privilege, dan Just-in-Time Access berhasil membatasi lingkup serta durasi akses sesuai rancangan dalam lingkungan prototipe.
+              </p>
             </div>
           </div>
         </section>
 
-        <div className="grid gap-6 xl:grid-cols-[1.05fr_0.95fr]">
-          <SectionCard label="Latar belakang masalah" title="Masalah keamanan yang diangkat">
-            <div className="space-y-3">
-              {problemItems.map((item) => (
-                <Callout key={item}>{item}</Callout>
-              ))}
+        <section id="mekanisme" className="scroll-mt-32">
+          <SectionHeading
+            eyebrow="Mekanisme kontrol akses"
+            title="Tiga lapisan, tiga pertanyaan yang berbeda"
+            description="Setiap lapisan memiliki tanggung jawab sendiri dan seluruh keputusan utama ditegakkan pada backend."
+          />
+
+          <div className="mt-7 grid gap-4 lg:grid-cols-3">
+            {mechanismLayers.map((item) => (
+              <article key={item.number} className="rounded-[22px] border border-[#ddd9d0] bg-white p-6 shadow-sm">
+                <div className="flex items-center justify-between gap-4">
+                  <p className="text-xs font-black uppercase tracking-[0.16em] text-[#0f766e]">{item.title}</p>
+                  <span className="font-mono text-xs font-bold text-[#9a7a47]">{item.number}</span>
+                </div>
+                <h3 className="mt-5 text-lg font-extrabold text-[#183142]">{item.subtitle}</h3>
+                <p className="mt-3 text-sm leading-7 text-[#5f6d69]">{item.body}</p>
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-5 rounded-[24px] bg-[#102a3a] p-6 text-white sm:p-7">
+            <div className="grid gap-7 lg:grid-cols-[.75fr_1.25fr]">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-[#88d5c9]">Alur operasional</p>
+                <h3 className="mt-3 text-2xl font-extrabold leading-tight">Ticket menjadi konteks utama setiap akses sensitif.</h3>
+                <p className="mt-4 text-sm leading-7 text-[#c8d5d9]">
+                  JIT menggunakan contextual auto-approval berdasarkan kondisi backend, bukan persetujuan manual Administrator.
+                </p>
+              </div>
+
+              <ol className="grid gap-3 sm:grid-cols-2">
+                {operationalFlow.map((item, index) => (
+                  <li key={item} className="flex gap-3 rounded-xl border border-white/10 bg-white/[0.06] p-4 text-sm leading-6 text-[#e1e9eb]">
+                    <span className="font-mono text-xs font-black text-[#88d5c9]">{String(index + 1).padStart(2, "0")}</span>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ol>
             </div>
-          </SectionCard>
+          </div>
+        </section>
 
-          <SectionCard label="Inti argumentasi" title="Mengapa RBAC saja belum cukup?">
-            <div className="space-y-3">
-              <Callout>
-                RBAC sangat berguna untuk menentukan siapa saja yang mengakses fitur tertentu dan boleh masuk ke area kerja tertentu, tetapi RBAC tidak selalu cukup untuk memastikan bahwa fitur atau akses yang dibuka benar-benar minimum (least privilege) dan hanya relevan pada konteks kerja yang sedang berlangsung.
-              </Callout>
-              <Callout variant="gold">
-                Pada kasus dalam dompet digital, role seperti Customer Service dapat memiliki role yang sah, namun tetap perlu dibatasi oleh ticket yang aktif, status penanganan, dan kebutuhan operasional yang valid. Karena itu, Least Privilege dipakai untuk mempersempit lingkup akses, lalu Just-in-Time Access dipakai untuk membatasi durasi akses terhadap fitur sensitif. jadi ini merupakan kombinasi RBAC + LP + JIT, bukan sekadar RBAC saja.
-              </Callout>
+        <section id="pengujian" className="scroll-mt-32">
+          <SectionHeading
+            eyebrow="Hasil pengujian"
+            title="19 skenario memverifikasi kondisi diterima dan ditolak"
+            description="Nilai 19/19 berarti hasil aktual sesuai dengan hasil yang dirancang, bukan skor keamanan absolut."
+          />
+
+          <div className="mt-7 grid gap-4 lg:grid-cols-3">
+            {testGroups.map((group) => (
+              <article key={group.name} className="rounded-[22px] border border-[#ddd9d0] bg-white p-6 shadow-sm">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-xs font-black uppercase tracking-[0.15em] text-[#61716c]">{group.name}</p>
+                    <p className="mt-3 text-sm leading-7 text-[#5f6d69]">{group.description}</p>
+                  </div>
+                  <span className="rounded-xl bg-[#dff1ec] px-3 py-2 text-lg font-black text-[#0f766e]">{group.score}</span>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <div className="mt-5 grid gap-5 rounded-[24px] border border-[#e2d5bb] bg-[#faf4e8] p-6 lg:grid-cols-2 lg:p-7">
+            <div>
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#936b2f]">Bukti yang diamati</p>
+              <p className="mt-3 text-sm leading-7 text-[#5f584b]">
+                Respons dan status HTTP, perubahan state database, data pada tabel jit_sessions, serta audit log dan terminal log.
+              </p>
             </div>
-          </SectionCard>
-        </div>
+            <div className="border-t border-[#e8dbc2] pt-5 lg:border-l lg:border-t-0 lg:pl-7 lg:pt-0">
+              <p className="text-xs font-black uppercase tracking-[0.16em] text-[#936b2f]">Interpretasi</p>
+              <p className="mt-3 text-sm leading-7 text-[#5f584b]">
+                Bukti penting bukan hanya request yang berhasil, tetapi juga penolakan lintas role, ticket milik CS lain, session expired, feature mismatch, dan konteks ticket yang tidak valid.
+              </p>
+            </div>
+          </div>
+        </section>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          <ContributionCard title={contributions[0].title} body={contributions[0].body} accent={contributions[0].accent} />
-          <ContributionCard title={contributions[1].title} body={contributions[1].body} accent={contributions[1].accent} />
-          <ContributionCard title={contributions[2].title} body={contributions[2].body} accent={contributions[2].accent} />
-        </div>
+        <section>
+          <SectionHeading
+            eyebrow="Bukti visual"
+            title="Diagram utama untuk mempercepat pemahaman"
+            description="Klik gambar untuk memperbesar. Penjelasan dibuat satu kalimat agar halaman tetap ringan."
+          />
 
-        <div className="grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
-          <SectionCard label="Tujuan dan implementasi" title="Apa yang dikerjakan pada project skripsi ini?">
-            <ol className="space-y-3">
-              {researchFocus.map((item, index) => (
-                <li key={item} className="flex gap-4 rounded-[22px] border border-stone-200 bg-stone-50 px-5 py-4">
-                  <span className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-stone-900 text-xs font-bold text-white shadow-sm">
-                    {index + 1}
-                  </span>
-                  <span className="text-sm leading-7 text-slate-700">{item}</span>
+          <div className="mt-7 grid gap-5 lg:grid-cols-3">
+            {visualEvidence.map((item) => (
+              <article key={item.title} className="overflow-hidden rounded-[22px] border border-[#ddd9d0] bg-white shadow-sm">
+                <button
+                  type="button"
+                  onClick={() => setViewer({ src: item.image, alt: item.title })}
+                  className="block w-full bg-[#f8f7f3] p-3 text-left focus:outline-none focus:ring-2 focus:ring-inset focus:ring-[#0f766e]"
+                  aria-label={`Perbesar gambar ${item.title}`}
+                >
+                  <img src={item.image} alt={item.title} className="h-52 w-full rounded-xl bg-white object-contain" loading="lazy" />
+                </button>
+                <div className="p-5">
+                  <h3 className="text-base font-extrabold text-[#183142]">{item.title}</h3>
+                  <p className="mt-2 text-sm leading-6 text-[#66736f]">{item.caption}</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section className="grid gap-5 lg:grid-cols-[1.05fr_.95fr]">
+          <article className="rounded-[24px] border border-[#cfdad6] bg-[#edf5f2] p-6 sm:p-7">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#0f766e]">Kontribusi penelitian</p>
+            <h2 className="mt-3 text-2xl font-extrabold leading-tight text-[#183142]">Membawa LP dan JIT ke backend application access control layer.</h2>
+            <p className="mt-4 text-sm leading-7 text-[#4d625d]">
+              Penelitian memodelkan kontrol akses internal secara terbuka melalui kombinasi role, assignment ticket, status ticket, feature sensitif, session sementara, dan log. Kontribusinya bersifat implementatif dan akademik, bukan penciptaan algoritma baru.
+            </p>
+          </article>
+
+          <article className="rounded-[24px] border border-[#e2d5bb] bg-[#faf4e8] p-6 sm:p-7">
+            <p className="text-xs font-black uppercase tracking-[0.16em] text-[#936b2f]">Batas klaim</p>
+            <ul className="mt-4 space-y-3">
+              {boundaries.map((item) => (
+                <li key={item} className="flex gap-3 text-sm leading-7 text-[#5f584b]">
+                  <span className="mt-2.5 h-1.5 w-1.5 flex-none rounded-full bg-[#b78a43]" />
+                  <span>{item}</span>
                 </li>
               ))}
-            </ol>
-          </SectionCard>
+            </ul>
+          </article>
+        </section>
 
-          <SectionCard label="Konteks prototipe" title="Mengapa memakai sistem dompet digital sebagai media representasi?">
-            <div className="space-y-4">
-              <Callout>
-                Dompet digital dipilih karena secara alami berkaitan dengan data sensitif seperti KYC, status akun, riwayat transaksi, dan aktivitas layanan pelanggan. Hal ini membuat demonstrasi kontrol akses menjadi lebih relevan dan mudah dipahami.
-              </Callout>
+        <section id="lampiran" className="scroll-mt-32">
+          <div className="overflow-hidden rounded-[26px] bg-[#102a3a] text-white">
+            <div className="grid gap-8 p-6 sm:p-8 lg:grid-cols-[.8fr_1.2fr] lg:p-10">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-[#88d5c9]">Repository dan lampiran</p>
+                <h2 className="mt-3 text-2xl font-extrabold leading-tight">Source code dan bukti penelitian</h2>
+                <p className="mt-4 text-sm leading-7 text-[#c8d5d9]">
+                  Backend, frontend, dan dokumen pendukung dipisahkan agar implementasi serta bukti pengujian mudah ditinjau.
+                </p>
 
-              <Callout variant="green">
-                Fokus project ini bukan membangun produk sistem fintech penuh, melainkan memakai prototipe sistem dompet digital sebagai media representasi agar mekanisme Least Privilege dan Just-in-Time Access dapat digambarkan secara realistis pada level layer aplikasi.
-              </Callout>
-            </div>
-          </SectionCard>
-        </div>
+                <dl className="mt-6 space-y-3 border-t border-white/10 pt-5">
+                  <DarkMetaRow label="Nama" value={thesisMeta.author} />
+                  <DarkMetaRow label="NIM" value={thesisMeta.studentId} />
+                  <DarkMetaRow label="Program Studi" value={thesisMeta.studyProgram} />
+                  <DarkMetaRow label="Institusi" value={thesisMeta.campus} />
+                  <DarkMetaRow label="Pembimbing I" value={thesisMeta.advisor} />
+                  <DarkMetaRow label="Pembimbing II" value={thesisMeta.advisor2} />
+                </dl>
+              </div>
 
-        <div className="grid gap-6 xl:grid-cols-[1.02fr_0.98fr]">
-          <SectionCard label="Visualisasi" title="Visualisasi perubahan RBAC design kontrol sebelum dan sesudah Least Privilege">
-            <div className="grid gap-4 lg:grid-cols-2">
-              {lpDiagramItems.map((item) => (
-                <div key={item.title} className="rounded-2xl border border-stone-200 bg-stone-50 p-3">
-                  <button
-                    type="button"
-                    onClick={() => setViewer({ src: item.image, alt: item.title })}
-                    className="block w-full overflow-hidden rounded-[18px] border border-dashed border-stone-300 bg-white p-2 text-left transition hover:opacity-95"
+              <div className="space-y-3">
+                {resources.map((item, index) => (
+                  <a
+                    key={item.label}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group grid grid-cols-[38px_1fr_auto] items-center gap-4 rounded-2xl border border-white/10 bg-white/[0.06] p-4 transition hover:border-[#88d5c9]/60 hover:bg-white/[0.09] sm:p-5"
                   >
-                    <img src={item.image} alt={item.title} className="h-[220px] w-full rounded-[14px] object-contain bg-stone-50" />
-                  </button>
-                  <div className="mt-3 text-sm font-semibold text-slate-950">{item.title}</div>
-                  <div className="mt-2 text-sm leading-6 text-slate-600">{item.caption}</div>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm leading-7 text-amber-900">
-              Bagian ini disiapkan agar penjelasan Least Privilege dapat divisualisasikan secara jelas melalui dua kondisi: sebelum pembatasan kontekstual diterapkan, dan setelah akses dipersempit berdasarkan ticket aktif serta assignment yang sah.
-            </div>
-          </SectionCard>
-
-          <SectionCard label="Visualisasi" title="Alur kerja Just-in-Time Access">
-            <button
-              type="button"
-              onClick={() => setViewer({ src: thesisMeta.diagramImage, alt: "Diagram alur kerja Just-in-Time Access" })}
-              className="block w-full overflow-hidden rounded-2xl border border-dashed border-stone-300 bg-stone-50 p-3 text-left transition hover:opacity-95"
-            >
-              <img src={thesisMeta.diagramImage} alt="Diagram alur kerja Just-in-Time Access" className="h-[260px] w-full rounded-[18px] object-contain bg-white" />
-              <div className="mt-3 text-xs text-slate-500">Klik gambar untuk memperbesar diagram.</div>
-            </button>
-            <div className="mt-4 space-y-3">
-              {diagramSteps.map((item, index) => (
-                <div key={item} className="flex gap-3 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
-                  <span className="mt-0.5 flex h-6 w-6 flex-shrink-0 items-center justify-center rounded-full bg-amber-700 text-xs font-bold text-white">{index + 1}</span>
-                  <span className="text-sm leading-6 text-slate-700">{item}</span>
-                </div>
-              ))}
-            </div>
-          </SectionCard>
-        </div>
-
-        <div className="grid gap-6 xl:grid-cols-[0.98fr_1.02fr]">
-          <SectionCard label="Teknologi" title="Stack yang digunakan pada implementasi">
-            <div className="grid gap-3 sm:grid-cols-2">
-              {stackItems.map((item) => (
-                <div key={item.title} className="rounded-2xl border border-stone-200 bg-stone-50 p-4">
-                  <div className="text-sm font-semibold text-slate-900">{item.title}</div>
-                  <div className="mt-2 text-sm leading-6 text-slate-600">{item.body}</div>
-                </div>
-              ))}
-            </div>
-          </SectionCard>
-
-          <SectionCard label="Batasan dan posisi akademik" title="Batasan yang harus dipahami">
-            <div className="space-y-3">
-              {boundaries.map((item, index) => (
-                <Callout key={`${index}-${item}`} variant={index === 2 ? "gold" : index === 3 ? "green" : "default"}>
-                  {item}
-                </Callout>
-              ))}
-            </div>
-          </SectionCard>
-        </div>
-
-        <div className="flex justify-center">
-          <div className="w-full max-w-2xl">
-            <SectionCard label="Repository dan dokumen" title="Lampiran yang menyertai project ini">
-              <div id="lampiran" className="space-y-3">
-                {resources.map((item) => (
-                  <ResourceLink key={item.label} label={item.label} href={item.href} />
+                    <span className="font-mono text-xs font-black text-[#88d5c9]">0{index + 1}</span>
+                    <span className="min-w-0">
+                      <span className="block text-sm font-extrabold text-white">{item.label}</span>
+                      <span className="mt-1 block text-xs leading-5 text-[#b9c8cc]">{item.description}</span>
+                    </span>
+                    <span className="text-lg text-[#88d5c9] transition group-hover:translate-x-0.5" aria-hidden="true">→</span>
+                  </a>
                 ))}
               </div>
-
-              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50/70 p-4 text-sm leading-7 text-amber-900">
-                Semua sumber utama dikumpulkan dalam satu halaman agar dosen atau pembaca tidak perlu menelusuri repository, dokumen, dan lampiran secara terpisah.
-              </div>
-            </SectionCard>
+            </div>
           </div>
-        </div>
-
-        <div className="py-4 text-center text-xs text-slate-400">
-          {thesisMeta.author} • {thesisMeta.buildDate}
-        </div>
+        </section>
       </div>
 
+      <footer className="border-t border-[#d9d5cc] bg-[#eeeae2]">
+        <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-7 text-xs text-[#65726e] sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+          <p>© {thesisMeta.buildDate} {thesisMeta.author}. Halaman ringkasan tugas akhir.</p>
+          <a href="#top" className="font-extrabold text-[#183142] hover:text-[#0f766e]">Kembali ke atas ↑</a>
+        </div>
+      </footer>
+
       {viewer ? <ImageViewer src={viewer.src} alt={viewer.alt} onClose={() => setViewer(null)} /> : null}
+    </main>
+  );
+}
+
+function SectionHeading({
+  eyebrow,
+  title,
+  description,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+}) {
+  return (
+    <div className="max-w-4xl">
+      <p className="text-xs font-black uppercase tracking-[0.17em] text-[#0f766e]">{eyebrow}</p>
+      <h2 className="mt-3 text-2xl font-extrabold leading-tight tracking-[-0.02em] text-[#183142] sm:text-3xl">{title}</h2>
+      <p className="mt-3 text-sm leading-7 text-[#64716d] sm:text-base sm:leading-8">{description}</p>
     </div>
   );
 }
 
-function KeyPointCard({ item }: { item: { label: string; value: string; description: string } }) {
+function MetaItem({ label, value }: { label: string; value: string }) {
   return (
-    <article className="min-h-[210px] rounded-[24px] border border-white/12 bg-white/[0.075] p-5 shadow-[0_18px_44px_rgba(15,23,42,0.16)] backdrop-blur-sm transition hover:-translate-y-0.5 hover:bg-white/[0.095]">
-      <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-stone-400">{item.label}</div>
-      <h3 className="mt-3 text-lg font-extrabold leading-snug text-amber-200">{item.value}</h3>
-      <p className="mt-3 text-sm leading-7 text-stone-300">{item.description}</p>
-    </article>
-  );
-}
-
-function SectionCard({ label, title, children }: { label: string; title: string; children: React.ReactNode }) {
-  return (
-    <section className="rounded-[28px] border border-stone-200 bg-white p-6 shadow-[0_12px_32px_rgba(15,23,42,0.04)] sm:p-7">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-amber-700">{label}</div>
-      <h2 className="mt-2 text-xl font-bold leading-snug text-slate-950 sm:text-2xl" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
-        {title}
-      </h2>
-      <div className="mt-5">{children}</div>
-    </section>
-  );
-}
-
-function Callout({ children, variant = "default" }: { children: React.ReactNode; variant?: "default" | "gold" | "green" }) {
-  const styleMap = {
-    default: "border-stone-200 bg-stone-50 text-slate-700",
-    gold: "border-amber-200 bg-amber-50/70 text-amber-900",
-    green: "border-emerald-200 bg-emerald-50/70 text-emerald-900",
-  };
-
-  return <div className={`rounded-2xl border p-4 text-sm leading-7 ${styleMap[variant]}`}>{children}</div>;
-}
-
-function ContributionCard({ title, body, accent }: { title: string; body: string; accent: string }) {
-  const accentMap: Record<string, string> = {
-    blue: "#2563eb",
-    amber: "#b45309",
-    slate: "#475569",
-  };
-
-  return (
-    <section className="relative overflow-hidden rounded-[28px] border border-stone-200 bg-white p-6 shadow-[0_12px_32px_rgba(15,23,42,0.04)]">
-      <div className="absolute left-0 right-0 top-0 h-1" style={{ background: accentMap[accent] ?? "#0f172a" }} />
-      <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">Sorotan</div>
-      <h3 className="mt-2 text-lg font-bold text-slate-950" style={{ fontFamily: "Georgia, 'Times New Roman', serif" }}>
-        {title}
-      </h3>
-      <p className="mt-3 text-sm leading-7 text-slate-600">{body}</p>
-    </section>
-  );
-}
-
-function MetaRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="grid grid-cols-[104px_1fr] gap-3 border-b border-white/10 pb-2 last:border-b-0 last:pb-0 sm:grid-cols-[120px_1fr]">
-      <span className="text-xs text-stone-400">{label}</span>
-      <span className="text-xs font-semibold text-stone-100">{value}</span>
+    <div>
+      <dt className="text-[10px] font-black uppercase tracking-[0.13em] text-[#88d5c9]">{label}</dt>
+      <dd className="mt-1 text-xs font-semibold leading-5 text-[#e1e9eb]">{value}</dd>
     </div>
   );
 }
 
-function ResourceLink({ label, href }: { label: string; href: string }) {
-  const isGitHub = label.toLowerCase().includes("github");
-
+function DarkMetaRow({ label, value }: { label: string; value: string }) {
   return (
-    <Link
-      href={href}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group flex items-center gap-4 rounded-[22px] border border-stone-200 bg-white px-5 py-4 shadow-[0_10px_26px_rgba(15,23,42,0.04)] transition hover:-translate-y-0.5 hover:border-amber-300 hover:shadow-[0_16px_36px_rgba(15,23,42,0.08)]"
-    >
-      <span className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl border border-stone-200 bg-stone-50 text-slate-900 transition group-hover:border-amber-200 group-hover:bg-amber-50">
-        {isGitHub ? <GitHubIcon /> : <DriveIcon />}
-      </span>
-
-      <span className="min-w-0 flex-1">
-        <span className="block text-sm font-bold text-slate-950">{label}</span>
-        <span className="mt-1 block truncate text-xs font-medium text-amber-700">{href}</span>
-      </span>
-
-      <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full border border-stone-200 text-sm font-bold text-slate-500 transition group-hover:border-amber-300 group-hover:bg-amber-50 group-hover:text-amber-700">
-        ↗
-      </span>
-    </Link>
-  );
-}
-
-function GitHubIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6 fill-current">
-      <path d="M12 2C6.48 2 2 6.58 2 12.26c0 4.53 2.87 8.37 6.84 9.73.5.1.68-.22.68-.49 0-.24-.01-1.04-.01-1.89-2.78.62-3.37-1.21-3.37-1.21-.45-1.19-1.11-1.51-1.11-1.51-.91-.64.07-.63.07-.63 1 .07 1.53 1.06 1.53 1.06.9 1.57 2.36 1.12 2.94.85.09-.67.35-1.12.63-1.38-2.22-.26-4.56-1.14-4.56-5.07 0-1.12.39-2.03 1.03-2.75-.1-.26-.45-1.3.1-2.71 0 0 .84-.28 2.75 1.05A9.3 9.3 0 0 1 12 6.98c.85 0 1.7.12 2.5.34 1.9-1.33 2.74-1.05 2.74-1.05.55 1.41.2 2.45.1 2.71.64.72 1.03 1.63 1.03 2.75 0 3.94-2.34 4.81-4.57 5.06.36.32.68.94.68 1.9 0 1.38-.01 2.49-.01 2.82 0 .27.18.59.69.49A10.06 10.06 0 0 0 22 12.26C22 6.58 17.52 2 12 2Z" />
-    </svg>
-  );
-}
-
-function DriveIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="h-6 w-6 fill-current">
-      <path d="M8.72 3h6.56l6.5 11.26-3.28 5.69L12 8.69 5.5 19.95l-3.28-5.69L8.72 3Zm-1.6 15.2h9.76L18.1 20.3H5.9l1.22-2.1Z" />
-    </svg>
+    <div className="grid grid-cols-[92px_1fr] gap-3">
+      <dt className="text-xs text-[#8fa3a9]">{label}</dt>
+      <dd className="text-xs font-bold leading-5 text-[#e1e9eb]">{value}</dd>
+    </div>
   );
 }
 
 function ImageViewer({ src, alt, onClose }: { src: string; alt: string; onClose: () => void }) {
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-slate-950/75 px-4 py-6 backdrop-blur-sm" onClick={onClose}>
-      <div className="relative w-full max-w-5xl overflow-hidden rounded-[28px] border border-white/10 bg-[#101828] p-3 shadow-[0_24px_80px_rgba(15,23,42,0.35)]" onClick={(e) => e.stopPropagation()}>
-        <button
-          type="button"
-          onClick={onClose}
-          className="absolute right-4 top-4 z-10 rounded-full border border-white/15 bg-white/10 px-3 py-1 text-xs font-semibold text-white hover:bg-white/20"
-        >
-          Tutup
-        </button>
-        <img src={src} alt={alt} className="max-h-[82vh] w-full rounded-[20px] object-contain bg-[#0b1220]" />
+    <div
+      className="fixed inset-0 z-[90] flex items-center justify-center bg-[#071722]/90 p-3 backdrop-blur-sm sm:p-6"
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Tampilan gambar: ${alt}`}
+      onMouseDown={onClose}
+    >
+      <div
+        className="relative w-full max-w-6xl overflow-hidden rounded-[22px] border border-white/10 bg-[#102a3a] p-2 shadow-2xl sm:p-3"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-center justify-between gap-4 px-2 pb-2 pt-1 sm:px-3 sm:pb-3">
+          <p className="min-w-0 truncate text-xs font-bold text-[#d6e0e3] sm:text-sm">{alt}</p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-9 items-center justify-center rounded-xl border border-white/15 bg-white/10 px-3 text-xs font-black text-white hover:bg-white/20 focus:outline-none focus:ring-2 focus:ring-[#88d5c9]"
+            autoFocus
+          >
+            Tutup ×
+          </button>
+        </div>
+        <img src={src} alt={alt} className="max-h-[82vh] w-full rounded-[16px] bg-white object-contain" />
       </div>
     </div>
   );

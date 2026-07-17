@@ -27,8 +27,6 @@ export default function CsTicketDetailPage() {
   const profile = useTicketUserProfile(ticketId);
   const upd = useUpdateTicketStatus();
   const clearTicketJit = useJitStore((s) => s.clearTicket);
-  
-  const currentTicket = ticketQ.data;
   const nextStatuses =
     ticketQ.data?.status === "CLAIMED"
       ? ["IN_PROGRESS"]
@@ -199,7 +197,7 @@ export default function CsTicketDetailPage() {
             </Card>
 
             {/* JIT Panel */}
-            {valid ? <JitPanel ticketId={ticketId} /> : null}
+            {valid ? <JitPanel ticketId={ticketId} ticketStatus={ticketQ.data?.status} /> : null}
           </div>
         </div>
       </div>
