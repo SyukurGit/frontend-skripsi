@@ -1,17 +1,18 @@
 "use client";
 
 import { useMemo } from "react";
-import { useParams } from "next/navigation";
 import Link from "next/link";
+import { useParams } from "next/navigation";
+import { ArrowLeft, Eye, LockKeyhole, ShieldAlert, UserRoundCheck } from "lucide-react";
+import { format } from "date-fns";
 import { Topbar } from "@/components/shell/topbar";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/badge";
-import { useMessages, useUserTicketActivity, useUserTickets } from "@/services/queries";
 import { ChatPanel } from "@/components/chat/chat-panel";
+import { DataPanel, EmptyState, KeyValue, PageHeader, Pill } from "@/components/ui/page";
+import { useMessages, useUserTicketActivity, useUserTickets } from "@/services/queries";
 import { getErrorMessage } from "@/utils/api-error";
 import { auditActionHint, auditActionLabel, isSensitiveAuditAction } from "@/utils/audit";
-import { format } from "date-fns";
 
 export default function UserTicketDetailPage() {
   const params = useParams<{ id: string }>();
@@ -30,113 +31,100 @@ export default function UserTicketDetailPage() {
 
   return (
     <div>
-      <Topbar title={valid ? `Ticket #${ticketId}` : "Tiket"} subtitle={valid ? "Pantau balasan dan status bantuan Anda" : "ID tiket tidak valid"} />
+      <Topbar title={valid ? `Ticket #${ticketId}` : "Ticket"} subtitle={valid ? "Chat dan transparansi akses" : "ID ticket tidak valid"} />
+      <PageHeader
+        eyebrow="Ticket detail"
+        title={valid ? `Ruang bantuan #${ticketId}` : "Ticket tidak valid"}
+        description="Halaman ini menunjukkan pengalaman pengguna akhir: chat tetap sederhana, sedangkan aktivitas sensitif CS ditampilkan sebagai transparansi."
+        actions={
+          <Link href="/user/tickets">
+            <Button variant="secondary">
+              <ArrowLeft className="h-4 w-4" />
+              Kembali
+            </Button>
+          </Link>
+        }
+        meta={ticket ? <StatusBadge status={ticket.status} /> : <Pill tone="warning">Memeriksa akses</Pill>}
+      />
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Ringkasan tiket</div>
-              {ticket ? <StatusBadge status={ticket.status} /> : null}
+      <section className="grid gap-5 xl:grid-cols-[0.42fr_1fr]">
+        <div className="space-y-5">
+          <DataPanel title="Ringkasan ticket" description="Data yang aman dilihat oleh pengguna.">
+            <div className="space-y-3">
+              <KeyValue label="Ticket ID" value={valid ? `#${ticketId}` : "-"} />
+              <KeyValue label="Petugas" value={ticket?.assignedCsId ? `CS #${ticket.assignedCsId}` : "Belum ditugaskan"} />
+              <KeyValue label="Status" value={ticket?.status ?? "-"} />
             </div>
-            <div className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Informasi bantuan</div>
-          </CardHeader>
-          <CardBody className="pt-4">
-            <div className="space-y-3 text-sm">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">Ticket ID</span>
-                <span className="font-semibold">{ticketId}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500">Petugas</span>
-                <span className="font-semibold">{ticket?.assignedCsId ?? "-"}</span>
-              </div>
-            </div>
-            <div className="mt-4 flex gap-2">
-              <Link href="/user/tickets">
-                <Button variant="secondary">Kembali</Button>
-              </Link>
-            </div>
+          </DataPanel>
 
-            <div className="mt-4 rounded-3xl border border-blue-100 bg-blue-50/80 p-5">
-              <div className="text-sm font-semibold text-slate-950">Yang dibatasi sistem dari sisi pengguna</div>
-              <div className="mt-3 space-y-3 text-sm text-slate-600">
-                <div className="rounded-2xl bg-white px-4 py-3 shadow-sm">Petugas hanya boleh melihat akun yang memang terikat ke tiket ini, bukan data pengguna lain secara umum.</div>
-                <div className="rounded-2xl bg-white px-4 py-3 shadow-sm">Tindakan sensitif pada akun Anda tidak aktif secara default dan harus melewati permintaan akses sementara dari sisi CS.</div>
-              </div>
+          <DataPanel title="Boundary akses" description="Aturan yang berlaku saat ticket diproses.">
+            <div className="space-y-3">
+              {[
+                { icon: UserRoundCheck, text: "CS harus ditugaskan pada ticket ini sebelum dapat bekerja." },
+                { icon: LockKeyhole, text: "Data sensitif tidak tersedia secara default." },
+                { icon: Eye, text: "Aktivitas sensitif yang terjadi akan ditampilkan kepada pengguna." },
+              ].map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div key={item.text} className="flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                    <Icon className="mt-0.5 h-5 w-5 shrink-0 text-emerald-700" />
+                    <div className="text-sm leading-6 text-slate-600">{item.text}</div>
+                  </div>
+                );
+              })}
             </div>
-          </CardBody>
-        </Card>
+          </DataPanel>
+        </div>
 
-        <div className="lg:col-span-2 space-y-4">
+        <div className="space-y-5">
           {canAccessTicket ? (
             <>
-              {tickets.isError ? <div className="mb-3 text-sm text-rose-700">{getErrorMessage(tickets.error, "Failed to load ticket metadata")}</div> : null}
+              {tickets.isError ? <div className="text-sm text-rose-700">{getErrorMessage(tickets.error, "Failed to load ticket metadata")}</div> : null}
               {!activity.isLoading && !activity.isError && sensitiveActivity.length > 0 ? (
-                <Card className="border-amber-200 bg-amber-50/80">
-                  <CardHeader>
-                    <div className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-800">Pemberitahuan akses sensitif</div>
-                    <div className="mt-2 text-xl font-semibold tracking-tight text-slate-950">Aktivitas Customer Service yang perlu diketahui pengguna</div>
-                  </CardHeader>
-                  <CardBody className="pt-4">
-                    <div className="space-y-3">
-                      {sensitiveActivity.slice(0, 3).map((item) => (
-                        <div key={item.id} className="rounded-2xl border border-amber-200 bg-white px-4 py-3 text-sm text-slate-700 shadow-sm">
-                          <div className="font-semibold text-slate-950">{auditActionLabel(item.action)}</div>
-                          <div className="mt-1">{auditActionHint(item)}</div>
-                          <div className="mt-2 text-xs text-amber-700">{format(new Date(item.createdAt), "PPp")}</div>
+                <DataPanel title="Pemberitahuan akses sensitif" description="Aktivitas ini berasal dari audit backend untuk ticket yang sedang dibuka.">
+                  <div className="space-y-3">
+                    {sensitiveActivity.slice(0, 4).map((item) => (
+                      <div key={item.id} className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                        <div className="flex items-start gap-3">
+                          <ShieldAlert className="mt-0.5 h-5 w-5 shrink-0 text-amber-700" />
+                          <div>
+                            <div className="font-semibold text-slate-950">{auditActionLabel(item.action)}</div>
+                            <div className="mt-1 text-sm leading-6 text-slate-600">{auditActionHint(item)}</div>
+                            <div className="mt-2 text-xs font-semibold uppercase tracking-[0.14em] text-amber-800">
+                              {format(new Date(item.createdAt), "PPp")}
+                            </div>
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  </CardBody>
-                </Card>
+                      </div>
+                    ))}
+                  </div>
+                </DataPanel>
               ) : null}
+
               {msgs.isError ? (
-                <Card>
-                  <CardHeader>
-                    <div className="text-sm font-semibold">Pesan tidak tersedia</div>
-                    <div className="mt-1 text-sm text-slate-500">{getErrorMessage(msgs.error, "Failed to load messages")}</div>
-                  </CardHeader>
-                  <CardBody className="pt-4">
-                    <Link href="/user/tickets">
-                      <Button variant="secondary">Kembali</Button>
-                    </Link>
-                  </CardBody>
-                </Card>
+                <DataPanel title="Pesan tidak tersedia" description={getErrorMessage(msgs.error, "Failed to load messages")}>
+                  <Link href="/user/tickets">
+                    <Button variant="secondary">Kembali ke ticket</Button>
+                  </Link>
+                </DataPanel>
               ) : (
                 <>
                   <ChatPanel ticketId={ticketId} initial={msgs.data ?? []} role="user" />
-                  {msgs.isLoading ? <div className="mt-2 text-xs text-slate-500">Memuat percakapan...</div> : null}
+                  {msgs.isLoading ? <div className="text-xs text-slate-500">Memuat percakapan...</div> : null}
                 </>
               )}
             </>
           ) : unauthorizedTicket ? (
-            <Card>
-              <CardHeader>
-                <div className="text-sm font-semibold">Tiket tidak dapat diakses</div>
-                <div className="mt-1 text-sm text-slate-500">Tiket ini bukan milik akun Anda atau sudah tidak tersedia.</div>
-              </CardHeader>
-              <CardBody className="pt-4">
-                <Link href="/user/tickets">
-                  <Button variant="secondary">Kembali ke tiket</Button>
-                </Link>
-              </CardBody>
-            </Card>
+            <DataPanel title="Ticket tidak dapat diakses" description="Ticket ini bukan milik akun Anda atau sudah tidak tersedia.">
+              <Link href="/user/tickets">
+                <Button variant="secondary">Kembali ke daftar ticket</Button>
+              </Link>
+            </DataPanel>
           ) : (
-            <Card>
-              <CardHeader>
-                <div className="text-sm font-semibold">Tiket tidak valid</div>
-                <div className="mt-1 text-sm text-slate-500">Periksa kembali tautan tiket yang Anda buka.</div>
-              </CardHeader>
-              <CardBody className="pt-4">
-                <Link href="/user/tickets">
-                  <Button variant="secondary">Kembali ke tiket</Button>
-                </Link>
-              </CardBody>
-            </Card>
+            <EmptyState title="Ticket tidak valid" description="Periksa kembali tautan ticket yang Anda buka." />
           )}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

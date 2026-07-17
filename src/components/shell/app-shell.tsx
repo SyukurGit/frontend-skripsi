@@ -8,11 +8,11 @@ function ShellFrame({ children }: { children: React.ReactNode }) {
   const { collapsed } = useShell();
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-slate-100">
+    <div className="min-h-screen bg-[#f6f7f4]">
       <div className="mx-auto flex min-h-screen max-w-full">
         <Sidebar />
         <main className="min-w-0 flex-1">
-          <div className={`mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8 ${collapsed ? "lg:px-10" : "lg:px-8"}`}>{children}</div>
+          <div className={`mx-auto max-w-[1480px] px-4 py-4 sm:px-5 lg:py-5 ${collapsed ? "lg:px-8" : "lg:px-6"}`}>{children}</div>
         </main>
       </div>
     </div>

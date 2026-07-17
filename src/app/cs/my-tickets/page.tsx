@@ -1,61 +1,79 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowRight, ClipboardList, MessageCircle } from "lucide-react";
 import { Topbar } from "@/components/shell/topbar";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { StatusBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { StatusBadge } from "@/components/ui/badge";
+import { DataPanel, EmptyState, PageHeader, Pill } from "@/components/ui/page";
+import { StatCard } from "@/components/ui/stat-card";
 import { useCsMyTickets } from "@/services/queries";
 import { getErrorMessage } from "@/utils/api-error";
 
 export default function CsMyTicketsPage() {
   const q = useCsMyTickets();
   const items = q.data ?? [];
+  const inProgress = items.filter((t) => t.status === "IN_PROGRESS").length;
+  const claimed = items.filter((t) => t.status === "CLAIMED").length;
+  const resolved = items.filter((t) => t.status === "RESOLVED").length;
 
   return (
     <div>
-      <Topbar title="Tiket Saya" subtitle="Daftar tiket yang sedang Anda tangani" />
+      <Topbar title="Assignment" subtitle="Ticket yang sudah terikat ke akun CS" />
+      <PageHeader
+        eyebrow="My ticket scope"
+        title="Daftar kerja yang boleh diakses"
+        description="Jika ticket tidak muncul di daftar ini, CS tidak memiliki konteks assignment untuk membuka percakapan atau profil pengguna."
+        meta={<Pill tone="info">Least privilege enforced by assignment</Pill>}
+      />
 
-      <div className="mt-6">
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Sedang ditangani</div>
-                <div className="mt-2 text-2xl font-semibold tracking-tight text-slate-950">Tiket aktif dalam penugasan Anda</div>
-                <div className="mt-2 text-sm leading-6 text-slate-500">Daftar ini hanya memuat tiket yang memang sudah terikat ke akun CS yang sedang login.</div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardBody className="pt-4">
-            {q.isLoading ? <div className="text-sm text-slate-500">Memuat tiket...</div> : null}
-            {q.isError ? <div className="text-sm text-rose-700">{getErrorMessage(q.error, "Failed to load assigned tickets")}</div> : null}
-            {!q.isLoading && !q.isError ? (
-            <div className="space-y-3">
-              {items.map((t) => (
-                <div key={t.id} className="flex items-center justify-between rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="flex items-center gap-3">
-                    <div>
-                      <div className="text-base font-semibold text-slate-950">Ticket #{t.id}</div>
-                      <div className="mt-1 text-sm text-slate-500">Buka tiket untuk melanjutkan percakapan dan pembaruan status.</div>
+      <section className="grid gap-4 md:grid-cols-3">
+        <StatCard label="Claimed" value={claimed} hint="Perlu dinaikkan ke IN_PROGRESS" tone="neutral" />
+        <StatCard label="In progress" value={inProgress} hint="JIT dapat diuji di status ini" tone="success" />
+        <StatCard label="Resolved" value={resolved} hint="Siap diselesaikan" tone="info" />
+      </section>
+
+      <section className="mt-5">
+        <DataPanel title="Ticket dalam penugasan" description="Buka workspace untuk chat, status, profil terbatas, dan permintaan JIT.">
+          {q.isLoading ? <div className="text-sm text-slate-500">Memuat ticket...</div> : null}
+          {q.isError ? <div className="text-sm text-rose-700">{getErrorMessage(q.error, "Failed to load assigned tickets")}</div> : null}
+          {!q.isLoading && !q.isError ? (
+            <div className="grid gap-3 lg:grid-cols-2">
+              {items.map((ticket) => (
+                <div key={ticket.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+                        <ClipboardList className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-slate-950">Ticket #{ticket.id}</div>
+                        <div className="mt-1 text-sm leading-6 text-slate-500">Konteks kerja sudah terikat ke akun CS ini.</div>
+                      </div>
                     </div>
-                    <StatusBadge status={t.status} />
+                    <StatusBadge status={ticket.status} />
                   </div>
-                  <Link href={`/cs/tickets/${t.id}`}>
-                    <Button variant="secondary">Buka</Button>
-                  </Link>
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Link href={`/cs/tickets/${ticket.id}`}>
+                      <Button size="sm">
+                        <MessageCircle className="h-4 w-4" />
+                        Buka workspace
+                      </Button>
+                    </Link>
+                    <Link href={`/cs/tickets/${ticket.id}`}>
+                      <Button variant="secondary" size="sm">
+                        Detail
+                        <ArrowRight className="h-4 w-4" />
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               ))}
-              {items.length === 0 ? (
-                <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">
-                  Belum ada tiket aktif.
-                </div>
-              ) : null}
+              {items.length === 0 ? <EmptyState title="Belum ada ticket" description="Ambil ticket dari queue agar scope kerja CS terbentuk." /> : null}
             </div>
-            ) : null}
-          </CardBody>
-        </Card>
-      </div>
+          ) : null}
+        </DataPanel>
+      </section>
     </div>
   );
 }

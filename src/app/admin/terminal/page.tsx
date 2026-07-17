@@ -12,7 +12,7 @@ import { format } from "date-fns";
 import type { TerminalLogEntry } from "@/types/api";
 
 function logCategory(message: string) {
-  if (message.includes("jit")) return { label: "JIT", cls: "bg-violet-500/15 text-violet-200 border-violet-400/30" };
+  if (message.includes("jit")) return { label: "JIT", cls: "bg-emerald-500/15 text-emerald-200 border-emerald-400/30" };
   if (message.includes("chat message")) return { label: "CHAT", cls: "bg-sky-500/15 text-sky-200 border-sky-400/30" };
   if (message.includes("status")) return { label: "STATUS", cls: "bg-amber-500/15 text-amber-200 border-amber-400/30" };
   if (message.includes("sensitive")) return { label: "SENSITIVE", cls: "bg-rose-500/15 text-rose-200 border-rose-400/30" };
@@ -133,7 +133,7 @@ export default function AdminTerminalPage() {
                     key={ticket.ticket_id}
                     type="button"
                     onClick={() => setSelectedTicketId(ticket.ticket_id)}
-                    className={`w-full rounded-[26px] border p-4 text-left transition-all ${effectiveTicketId === ticket.ticket_id ? "border-blue-200 bg-blue-50 shadow-[0_14px_32px_rgba(59,130,246,0.12)]" : "border-slate-200 bg-slate-50 hover:border-slate-300"}`}
+                    className={`w-full rounded-lg border p-4 text-left transition-all ${effectiveTicketId === ticket.ticket_id ? "border-emerald-300 bg-emerald-50 shadow-[0_14px_32px_rgba(0,122,90,0.12)]" : "border-slate-200 bg-slate-50 hover:border-slate-300"}`}
                   >
                     <div className="flex items-center justify-between gap-3">
                       <div>
@@ -145,7 +145,7 @@ export default function AdminTerminalPage() {
                     </div>
                   </button>
                 ))}
-                {rows.length === 0 ? <div className="rounded-3xl border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">Tidak ada tiket yang sedang diproses saat ini.</div> : null}
+                {rows.length === 0 ? <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-slate-500">Tidak ada tiket yang sedang diproses saat ini.</div> : null}
               </div>
             ) : null}
           </CardBody>
@@ -161,7 +161,7 @@ export default function AdminTerminalPage() {
             {logs.isLoading && effectiveTicketId > 0 ? <div className="text-sm text-slate-500">Memuat log terminal...</div> : null}
             {logs.isError ? <div className="text-sm text-rose-700">{getErrorMessage(logs.error, "Gagal memuat terminal log")}</div> : null}
             {effectiveTicketId > 0 ? (
-              <div className="overflow-hidden rounded-[28px] border border-slate-900 bg-[#0b1220] text-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.20)]">
+              <div className="overflow-hidden rounded-xl border border-slate-900 bg-[#0b1220] text-slate-100 shadow-[0_18px_40px_rgba(15,23,42,0.20)]">
                 <div className="border-b border-slate-800 px-5 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Ticket #{effectiveTicketId} - live backend trace</div>
                 <div className="max-h-[720px] overflow-auto px-5 py-4 font-mono text-[12px] leading-6">
                   {displayedLogs.map((entry, index) => {

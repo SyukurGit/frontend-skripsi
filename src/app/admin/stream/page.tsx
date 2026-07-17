@@ -148,7 +148,7 @@ export default function AdminStreamPage() {
                   key={group.ticketId}
                   type="button"
                   onClick={() => setSelectedTicketId(group.ticketId)}
-                  className={`w-full rounded-[24px] border p-4 text-left transition-all ${effectiveSelectedTicketId === group.ticketId ? "border-blue-200 bg-blue-50 shadow-[0_14px_30px_rgba(59,130,246,0.12)]" : "border-slate-200 bg-slate-50 hover:border-slate-300"}`}
+                  className={`w-full rounded-lg border p-4 text-left transition-all ${effectiveSelectedTicketId === group.ticketId ? "border-emerald-300 bg-emerald-50 shadow-[0_14px_30px_rgba(0,122,90,0.12)]" : "border-slate-200 bg-slate-50 hover:border-slate-300"}`}
                 >
                   <div className="flex items-center justify-between gap-3">
                     <div>
@@ -160,7 +160,7 @@ export default function AdminStreamPage() {
                   </div>
                 </button>
               ))}
-              {grouped.length === 0 ? <div className="rounded-3xl border border-dashed border-border bg-slate-50 p-6 text-sm text-slate-500">Belum ada tiket dengan event realtime pada level ini.</div> : null}
+              {grouped.length === 0 ? <div className="rounded-xl border border-dashed border-border bg-slate-50 p-6 text-sm text-slate-500">Belum ada tiket dengan event realtime pada level ini.</div> : null}
             </div>
           </CardBody>
         </Card>
@@ -182,10 +182,10 @@ export default function AdminStreamPage() {
                   const meta = auditMeta(item);
                   const feature = typeof meta.feature === "string" ? meta.feature : null;
                   return (
-                    <div key={item.id} className={`rounded-3xl border p-4 transition-all duration-300 ${index === 0 ? "border-blue-200 bg-blue-50 shadow-[0_16px_34px_rgba(59,130,246,0.12)]" : "border-border bg-slate-50"}`}>
+                    <div key={item.id} className={`rounded-lg border p-4 transition-all duration-300 ${index === 0 ? "border-emerald-300 bg-emerald-50 shadow-[0_16px_34px_rgba(0,122,90,0.12)]" : "border-border bg-slate-50"}`}>
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex items-start gap-3">
-                          <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${index === 0 ? "bg-blue-600 text-white animate-pulse" : "bg-slate-200 text-slate-700"}`}>{index + 1}</div>
+                          <div className={`flex h-8 w-8 items-center justify-center rounded-lg text-xs font-bold ${index === 0 ? "bg-emerald-700 text-white animate-pulse" : "bg-slate-200 text-slate-700"}`}>{index + 1}</div>
                           <div>
                             <div className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Langkah realtime</div>
                             <div className="mt-2 text-base font-semibold text-slate-950">{auditActionLabel(item.action)}</div>
@@ -194,14 +194,14 @@ export default function AdminStreamPage() {
                         <LevelBadge level={item.level} />
                       </div>
                       <div className="mt-3 text-sm leading-6 text-slate-600">{auditActionHint(item)}</div>
-                      {feature ? <div className="mt-3 rounded-2xl bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-700">Fitur: {feature}</div> : null}
+                      {feature ? <div className="mt-3 rounded-lg bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">Fitur: {feature}</div> : null}
                       <div className="mt-3 text-xs text-slate-500">{format(new Date(item.createdAt), "PPp")} - user:{item.userId} role:{item.role}</div>
                     </div>
                   );
                 })}
               </div>
             ) : (
-              <div className="rounded-3xl border border-dashed border-border bg-slate-50 p-6 text-sm text-slate-500">Pilih tiket dari panel kiri untuk melihat event realtime yang sedang masuk.</div>
+              <div className="rounded-xl border border-dashed border-border bg-slate-50 p-6 text-sm text-slate-500">Pilih tiket dari panel kiri untuk melihat event realtime yang sedang masuk.</div>
             )}
           </CardBody>
         </Card>

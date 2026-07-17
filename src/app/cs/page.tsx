@@ -1,11 +1,12 @@
 "use client";
 
 import Link from "next/link";
+import { AlertTriangle, ArrowRight, Inbox, LockKeyhole, UserRoundCheck } from "lucide-react";
 import { Topbar } from "@/components/shell/topbar";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { StatCard } from "@/components/ui/stat-card";
 import { StatusBadge } from "@/components/ui/badge";
+import { DataPanel, EmptyState, PageHeader, Pill } from "@/components/ui/page";
+import { StatCard } from "@/components/ui/stat-card";
 import { useCsClaimTicket, useCsMyTickets, useCsOpenTickets } from "@/services/queries";
 import { useToastStore } from "@/store/toast";
 import { getErrorMessage } from "@/utils/api-error";
@@ -24,57 +25,47 @@ export default function CsHome() {
 
   return (
     <div>
-      <Topbar title="Dashboard Petugas" subtitle="Kelola antrian tiket dan percakapan pelanggan" />
-
-      {/* Overview Card */}
-      <section className="rounded-lg border border-slate-200 bg-gradient-to-br from-teal-600 to-teal-700 p-6 text-white sm:p-8">
-        <div className="text-sm font-semibold text-teal-100">Status Penugasan</div>
-        <div className="mt-3 text-3xl font-bold">
-          {activeCount} dari 2 tiket aktif
-        </div>
-        <p className="mt-3 text-sm text-teal-100">
-          Anda dapat menangani maksimal 2 tiket secara bersamaan. Selesaikan tiket yang aktif untuk membuka slot baru.
-        </p>
-        <div className="mt-6">
+      <Topbar title="CS Workspace" subtitle="Queue bantuan dengan akses berbasis assignment" />
+      <PageHeader
+        eyebrow="Ticket-bound workspace"
+        title="Ambil ticket hanya saat masih ada kapasitas penugasan"
+        description="CS tidak bekerja dari daftar seluruh pengguna. Semua akses dimulai dari ticket yang diambil, lalu dipersempit lagi oleh status dan sesi JIT."
+        actions={
           <Link href="/cs/my-tickets">
-            <Button className="bg-white text-teal-600 hover:bg-slate-100">Lihat semua tiket</Button>
+            <Button variant="dark">
+              <UserRoundCheck className="h-4 w-4" />
+              Ticket saya
+            </Button>
           </Link>
-        </div>
+        }
+        meta={atLimit ? <Pill tone="warning">Kapasitas penuh: 2/2 aktif</Pill> : <Pill tone="success">Slot tersedia: {activeCount}/2 aktif</Pill>}
+      />
+
+      <section className="grid gap-4 md:grid-cols-3">
+        <StatCard label="Queue masuk" value={openItems.length} hint="OPEN dan belum ditugaskan" tone="info" />
+        <StatCard label="Aktif ditangani" value={`${activeCount}/2`} hint="CLAIMED atau IN_PROGRESS" tone={atLimit ? "warning" : "success"} />
+        <StatCard label="Resolved" value={resolvedCount} hint="Menunggu ditutup pengguna/admin flow" tone="neutral" />
       </section>
 
-      {/* Stats */}
-      <section className="mt-6 grid gap-4 md:grid-cols-3">
-        <StatCard label="Antrian masuk" value={openItems.length} hint="Tiket baru menunggu untuk diambil" />
-        <StatCard label="Sedang ditangani" value={activeCount} hint="Tiket aktif Anda saat ini" />
-        <StatCard label="Siap ditutup" value={resolvedCount} hint="Tiket selesai yang dapat ditutup" />
-      </section>
-
-      {/* Tickets Grid */}
-      <section className="mt-6 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-        {/* Incoming Queue */}
-        <Card>
-          <CardHeader>
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <div className="text-sm font-semibold uppercase tracking-wider text-slate-500">Antrian</div>
-                <div className="mt-2 text-xl font-bold text-slate-950">Tiket masuk</div>
-              </div>
-              <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{openItems.length}</div>
-            </div>
-          </CardHeader>
-          <CardBody className="pt-4">
-            {open.isLoading ? (
-              <div className="text-sm text-slate-500">Memuat antrian...</div>
-            ) : open.isError ? (
-              <div className="text-sm text-red-600">{getErrorMessage(open.error, "Gagal memuat antrian")}</div>
-            ) : (
-              <div className="space-y-3">
-                {openItems.map((ticket) => (
-                  <div key={ticket.id} className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <div className="font-semibold text-slate-950">Ticket #{ticket.id}</div>
-                        <StatusBadge status={ticket.status} />
+      <section className="mt-5 grid gap-5 xl:grid-cols-[1fr_0.48fr]">
+        <DataPanel title="Queue ticket masuk" description="Claim ticket untuk mengikat konteks kerja ke akun CS ini.">
+          {open.isLoading ? <div className="text-sm text-slate-500">Memuat antrian...</div> : null}
+          {open.isError ? <div className="text-sm text-rose-700">{getErrorMessage(open.error, "Gagal memuat antrian")}</div> : null}
+          {!open.isLoading && !open.isError ? (
+            <div className="space-y-3">
+              {openItems.map((ticket) => (
+                <div key={ticket.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-100 text-cyan-700">
+                        <Inbox className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <div className="font-semibold text-slate-950">Ticket #{ticket.id}</div>
+                          <StatusBadge status={ticket.status} />
+                        </div>
+                        <div className="mt-1 text-sm text-slate-500">Belum ada CS yang memiliki scope akses ke ticket ini.</div>
                       </div>
                     </div>
                     <Button
@@ -82,54 +73,54 @@ export default function CsHome() {
                       onClick={async () => {
                         try {
                           await claim.mutateAsync(ticket.id);
-                          toast({ kind: "success", title: "Tiket berhasil diambil", detail: `#${ticket.id}` });
+                          toast({ kind: "success", title: "Ticket berhasil diambil", detail: `#${ticket.id}` });
                         } catch (error) {
-                          toast({ kind: "error", title: "Gagal mengambil tiket", detail: getErrorMessage(error, "Gagal") });
+                          toast({ kind: "error", title: "Gagal mengambil ticket", detail: getErrorMessage(error, "Gagal") });
                         }
                       }}
                     >
-                      {atLimit ? "Limit" : "Ambil"}
+                      {atLimit ? "Limit 2 ticket" : "Ambil ticket"}
                     </Button>
                   </div>
-                ))}
-                {openItems.length === 0 && (
-                  <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
-                    Tidak ada tiket baru
-                  </div>
-                )}
+                </div>
+              ))}
+              {openItems.length === 0 ? <EmptyState title="Queue kosong" description="Tidak ada ticket OPEN yang menunggu assignment." /> : null}
+            </div>
+          ) : null}
+        </DataPanel>
+
+        <DataPanel title="Ticket saya" description="Akses operasional hanya berasal dari daftar ini.">
+          <div className="space-y-3">
+            {assignedItems.slice(0, 5).map((ticket) => (
+              <Link
+                key={ticket.id}
+                href={`/cs/tickets/${ticket.id}`}
+                className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 transition hover:border-emerald-300 hover:bg-emerald-50"
+              >
+                <div>
+                  <div className="font-semibold text-slate-950">Ticket #{ticket.id}</div>
+                  <div className="mt-1 text-sm text-slate-500">Buka workspace</div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <StatusBadge status={ticket.status} />
+                  <ArrowRight className="h-4 w-4 text-slate-400" />
+                </div>
+              </Link>
+            ))}
+            {assignedItems.length === 0 ? <EmptyState title="Belum ada assignment" description="Claim ticket dari queue untuk memulai pengujian LP." /> : null}
+            {atLimit ? (
+              <div className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
+                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+                Selesaikan salah satu ticket aktif sebelum mengambil ticket baru.
+              </div>
+            ) : (
+              <div className="flex gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
+                <LockKeyhole className="mt-0.5 h-5 w-5 shrink-0" />
+                Scope akses akan terbentuk setelah ticket berhasil diambil.
               </div>
             )}
-          </CardBody>
-        </Card>
-
-        {/* Active Tickets */}
-        <Card>
-          <CardHeader>
-            <div className="text-sm font-semibold uppercase tracking-wider text-slate-500">Aktif</div>
-            <div className="mt-2 text-xl font-bold text-slate-950">Tiket saya</div>
-          </CardHeader>
-          <CardBody className="pt-4">
-            <div className="space-y-3">
-              {assignedItems.slice(0, 5).map((ticket) => (
-                <Link
-                  key={ticket.id}
-                  href={`/cs/tickets/${ticket.id}`}
-                  className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4 hover:border-teal-300 hover:bg-teal-50"
-                >
-                  <div>
-                    <div className="font-semibold text-slate-950">Ticket #{ticket.id}</div>
-                  </div>
-                  <StatusBadge status={ticket.status} />
-                </Link>
-              ))}
-              {assignedItems.length === 0 && (
-                <div className="rounded-lg border border-dashed border-slate-200 bg-slate-50 p-6 text-center text-sm text-slate-500">
-                  Belum ada tiket
-                </div>
-              )}
-            </div>
-          </CardBody>
-        </Card>
+          </div>
+        </DataPanel>
       </section>
     </div>
   );

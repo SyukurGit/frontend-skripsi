@@ -1,19 +1,21 @@
 "use client";
 
+import { useMemo } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { Card, CardBody, CardHeader } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Select } from "@/components/ui/input";
-import { StatusBadge } from "@/components/ui/badge";
+import { ArrowLeft, LockKeyhole, RefreshCw, ShieldCheck, UserRound } from "lucide-react";
 import { Topbar } from "@/components/shell/topbar";
 import { ChatPanel } from "@/components/chat/chat-panel";
 import { JitPanel } from "@/components/jit/jit-panel";
+import { Button } from "@/components/ui/button";
+import { Select } from "@/components/ui/input";
+import { StatusBadge } from "@/components/ui/badge";
+import { DataPanel, EmptyState, KeyValue, PageHeader, Pill } from "@/components/ui/page";
 import { useCsTicket, useMessages, useTicketUserProfile, useUpdateTicketStatus } from "@/services/queries";
 import { useJitStore } from "@/store/jit";
 import { useToastStore } from "@/store/toast";
 import { getErrorMessage } from "@/utils/api-error";
-import { useMemo } from "react";
+import { formatMoneyIDR } from "@/utils/format";
 
 export default function CsTicketDetailPage() {
   const toast = useToastStore((s) => s.push);
@@ -25,8 +27,9 @@ export default function CsTicketDetailPage() {
   const ticketQ = useCsTicket(ticketId);
   const msgs = useMessages(ticketId, "cs");
   const profile = useTicketUserProfile(ticketId);
-  const upd = useUpdateTicketStatus();
+  const updateStatus = useUpdateTicketStatus();
   const clearTicketJit = useJitStore((s) => s.clearTicket);
+
   const nextStatuses =
     ticketQ.data?.status === "CLAIMED"
       ? ["IN_PROGRESS"]
@@ -37,8 +40,8 @@ export default function CsTicketDetailPage() {
           : [];
 
   const kyc = useMemo(() => {
-    const d = profile.data?.kycData;
-    if (typeof d === "object" && d !== null) return d as Record<string, unknown>;
+    const data = profile.data?.kycData;
+    if (typeof data === "object" && data !== null) return data as Record<string, unknown>;
     return {};
   }, [profile.data]);
 
@@ -47,64 +50,72 @@ export default function CsTicketDetailPage() {
   if (!valid) {
     return (
       <div>
-        <Topbar title="Tiket" subtitle="ID tiket tidak valid" />
-        <Card>
-          <CardHeader>
-            <div className="text-sm font-semibold">Tiket tidak ditemukan</div>
-          </CardHeader>
-          <CardBody className="pt-4">
+        <Topbar title="Ticket" subtitle="ID ticket tidak valid" />
+        <EmptyState
+          title="Ticket tidak ditemukan"
+          description="Kembali ke daftar assignment untuk memilih ticket yang valid."
+          action={
             <Link href="/cs/my-tickets">
-              <Button variant="secondary">Kembali ke daftar</Button>
+              <Button variant="secondary">Kembali</Button>
             </Link>
-          </CardBody>
-        </Card>
+          }
+        />
       </div>
     );
   }
 
   return (
     <div>
-      <Topbar title={`Ticket #${ticketId}`} subtitle="Kelola percakapan dan status tiket" />
+      <Topbar title={`Ticket #${ticketId}`} subtitle="Workspace CS dengan status, chat, profil, dan JIT" />
+      <PageHeader
+        eyebrow="Operational workspace"
+        title={`Penanganan ticket #${ticketId}`}
+        description="Alur kerja ini memperlihatkan bagaimana RBAC, assignment ticket, status IN_PROGRESS, dan JIT saling membatasi akses CS."
+        actions={
+          <Link href="/cs/my-tickets">
+            <Button variant="secondary">
+              <ArrowLeft className="h-4 w-4" />
+              Assignment
+            </Button>
+          </Link>
+        }
+        meta={
+          <>
+            <StatusBadge status={ticketQ.data?.status ?? "CLAIMED"} />
+            <Pill tone={profileLocked ? "warning" : "success"}>{profileLocked ? "Profil terkunci" : "Profil terbuka via JIT"}</Pill>
+          </>
+        }
+      />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        {/* Status Panel */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">Tiket</div>
-            <div className="mt-2 text-xl font-bold text-slate-950">Status & Aksi</div>
-          </CardHeader>
-          <CardBody className="space-y-4 pt-4">
-            {/* Current Status */}
-            <div className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 p-4">
-              <div className="text-sm font-semibold text-slate-600">Status saat ini</div>
-              <StatusBadge status={ticketQ.data?.status ?? "CLAIMED"} />
-            </div>
-
-            {/* Status Update */}
-            {ticketQ.isError ? (
-              <div className="text-sm text-red-600">{getErrorMessage(ticketQ.error, "Gagal memuat tiket")}</div>
-            ) : (
+      <section className="grid gap-5 xl:grid-cols-[0.42fr_1fr]">
+        <div className="space-y-5">
+          <DataPanel title="Lifecycle ticket" description="Status menentukan kapan JIT dapat diuji.">
+            <div className="space-y-3">
+              <KeyValue label="Ticket" value={`#${ticketId}`} />
+              <KeyValue label="Status saat ini" value={ticketQ.data?.status ?? "Memuat"} />
+              <KeyValue label="User ID" value={ticketQ.data?.userId ?? "-"} />
+              {ticketQ.isError ? <div className="text-sm text-rose-700">{getErrorMessage(ticketQ.error, "Gagal memuat ticket")}</div> : null}
               <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <label className="text-sm font-semibold text-slate-700">Lanjutkan ke status</label>
+                <label className="text-xs font-semibold uppercase text-slate-500">Transisi status</label>
                 <Select
                   value=""
-                  disabled={upd.isPending || nextStatuses.length === 0 || ticketQ.isLoading}
+                  disabled={updateStatus.isPending || nextStatuses.length === 0 || ticketQ.isLoading}
                   onChange={async (e) => {
                     const status = e.target.value;
                     if (!status) return;
                     try {
-                      await upd.mutateAsync({ ticketId, status });
+                      await updateStatus.mutateAsync({ ticketId, status });
                       await ticketQ.refetch();
                       if (status === "CLOSED") clearTicketJit(ticketId);
                       toast({ kind: "success", title: "Status diperbarui", detail: status });
                     } catch (err) {
-                      toast({ kind: "error", title: "Gagal", detail: getErrorMessage(err, "Update status gagal") });
+                      toast({ kind: "error", title: "Gagal memperbarui status", detail: getErrorMessage(err, "Update status gagal") });
                     }
                   }}
                   className="mt-2"
                 >
                   <option value="" disabled>
-                    {nextStatuses.length > 0 ? "Pilih status berikutnya" : "Tiket tertutup"}
+                    {nextStatuses.length > 0 ? "Pilih status berikutnya" : "Tidak ada transisi"}
                   </option>
                   {nextStatuses.map((status) => (
                     <option key={status} value={status}>
@@ -112,95 +123,88 @@ export default function CsTicketDetailPage() {
                     </option>
                   ))}
                 </Select>
+                <div className="mt-2 text-xs leading-5 text-slate-500">JIT hanya disetujui backend ketika status ticket IN_PROGRESS.</div>
               </div>
-            )}
+            </div>
+          </DataPanel>
 
-            {/* Back Button */}
-            <Link href="/cs/my-tickets" className="block">
-              <Button variant="secondary" className="w-full">Kembali</Button>
-            </Link>
-          </CardBody>
-        </Card>
-
-        {/* Main Content */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* Chat */}
-          {valid && msgs.isError ? (
-            <Card>
-              <CardHeader>
-                <div className="text-sm font-semibold text-slate-950">Percakapan gagal dimuat</div>
-              </CardHeader>
-            </Card>
-          ) : valid && !msgs.isError ? (
-            <ChatPanel ticketId={ticketId} initial={msgs.data ?? []} role="cs" />
-          ) : null}
-
-          {/* Profile & JIT */}
-          <div className="grid gap-6 lg:grid-cols-2">
-            {/* User Profile */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between gap-4">
-                  <div>
-                    <div className="text-sm font-semibold uppercase tracking-wide text-slate-500">Profil</div>
-                    <div className="mt-2 text-lg font-bold text-slate-950">Informasi pengguna</div>
-                  </div>
-                  <div className={`rounded-full px-3 py-1 text-xs font-semibold ${profileLocked ? 'border border-amber-200 bg-amber-50 text-amber-700' : 'border border-emerald-200 bg-emerald-50 text-emerald-700'}`}>
-                    {profileLocked ? "TERKUNCI" : "TERBUKA"}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardBody className="space-y-3 pt-4">
-                {profile.isLoading ? (
-                  <div className="text-sm text-slate-500">Memuat data...</div>
-                ) : profile.isError ? (
-                  <div className="text-sm text-red-600">{getErrorMessage(profile.error, "Gagal memuat")}</div>
-                ) : profileLocked ? (
+          <DataPanel title="Profil pengguna" description="Data sensitif tetap terkunci sampai ada sesi JIT yang valid.">
+            {profile.isLoading ? <div className="text-sm text-slate-500">Memuat profil...</div> : null}
+            {profile.isError ? <div className="text-sm text-rose-700">{getErrorMessage(profile.error, "Gagal memuat profil")}</div> : null}
+            {!profile.isLoading && !profile.isError ? (
+              <div className="space-y-3">
+                {profileLocked ? (
                   <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
-                    <div className="text-sm font-semibold text-amber-900">Data pengguna terkunci</div>
-                    <p className="mt-1 text-xs text-amber-800">Gunakan JIT untuk membuka akses data sensitif.</p>
+                    <LockKeyhole className="h-5 w-5 text-amber-700" />
+                    <div className="mt-2 font-semibold text-slate-950">Profil masih terkunci</div>
+                    <div className="mt-1 text-sm leading-6 text-amber-900">
+                      Request JIT untuk VIEW_KYC atau fitur sensitif lain setelah status IN_PROGRESS.
+                    </div>
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                      <div className="text-xs font-semibold uppercase text-slate-500">Nomor telepon</div>
-                      <div className="mt-1 font-semibold text-slate-900">{profile.data?.phone ?? "-"}</div>
-                    </div>
-                    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                      <div className="text-xs font-semibold uppercase text-slate-500">Saldo</div>
-                      <div className="mt-1 font-semibold text-slate-900">Rp {Number(profile.data?.balance ?? 0).toLocaleString("id-ID")}</div>
-                    </div>
+                  <div className="space-y-3">
+                    <KeyValue label="Nomor telepon" value={profile.data?.phone ?? "-"} />
+                    <KeyValue label="Saldo" value={formatMoneyIDR(Number(profile.data?.balance ?? 0))} />
                     {Object.entries(kyc).slice(0, 4).map(([key, value]) => (
-                      <div key={key} className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                        <div className="text-xs font-semibold uppercase text-slate-500">{String(key).replace(/_/g, " ")}</div>
-                        <div className="mt-1 text-sm text-slate-900">{String(value ?? "-")}</div>
-                      </div>
+                      <KeyValue key={key} label={String(key).replace(/_/g, " ")} value={String(value ?? "-")} />
                     ))}
                   </div>
                 )}
-                <Button 
+                <Button
                   variant="secondary"
                   className="w-full"
                   onClick={async () => {
                     try {
                       await profile.refetch();
-                      toast({ kind: "success", title: "Data diperbarui" });
+                      toast({ kind: "success", title: "Profil diperbarui" });
                     } catch (error) {
-                      toast({ kind: "error", title: "Gagal", detail: getErrorMessage(error, "Refresh gagal") });
+                      toast({ kind: "error", title: "Refresh gagal", detail: getErrorMessage(error, "Refresh gagal") });
                     }
                   }}
                   disabled={profile.isFetching}
                 >
-                  {profile.isFetching ? "Memuat ulang..." : "Perbarui"}
+                  <RefreshCw className="h-4 w-4" />
+                  {profile.isFetching ? "Memuat ulang..." : "Refresh profil"}
                 </Button>
-              </CardBody>
-            </Card>
+              </div>
+            ) : null}
+          </DataPanel>
+        </div>
 
-            {/* JIT Panel */}
-            {valid ? <JitPanel ticketId={ticketId} ticketStatus={ticketQ.data?.status} /> : null}
+        <div className="space-y-5">
+          {msgs.isError ? (
+            <DataPanel title="Percakapan gagal dimuat" description={getErrorMessage(msgs.error, "Gagal memuat pesan")}>
+              <Link href="/cs/my-tickets">
+                <Button variant="secondary">Kembali</Button>
+              </Link>
+            </DataPanel>
+          ) : (
+            <ChatPanel ticketId={ticketId} initial={msgs.data ?? []} role="cs" />
+          )}
+
+          <div className="grid gap-5 lg:grid-cols-[1fr_1.1fr]">
+            <DataPanel title="Kontrol akses" description="Ringkasan syarat yang sedang berlaku.">
+              <div className="space-y-3">
+                {[
+                  { icon: UserRound, title: "CS terverifikasi", desc: "RBAC memberi akses ke area CS." },
+                  { icon: ShieldCheck, title: "Ticket assigned", desc: "Backend membatasi data sesuai ticket ini." },
+                  { icon: LockKeyhole, title: "JIT sementara", desc: "Aksi sensitif harus punya sesi aktif." },
+                ].map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <div key={item.title} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                      <Icon className="h-5 w-5 text-emerald-700" />
+                      <div className="mt-2 font-semibold text-slate-950">{item.title}</div>
+                      <div className="mt-1 text-sm leading-6 text-slate-500">{item.desc}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </DataPanel>
+            <JitPanel ticketId={ticketId} ticketStatus={ticketQ.data?.status} />
           </div>
         </div>
-      </div>
+      </section>
     </div>
   );
 }

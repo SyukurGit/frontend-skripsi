@@ -1,23 +1,25 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowRight, Headphones, ShieldCheck, UserRound } from "lucide-react";
 import { LogoMark } from "@/components/branding/logo-mark";
-import { Card, CardBody } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useAuthedRedirect } from "@/hooks/use-authed-redirect";
 
 const options = [
   {
     href: "/login/user",
-    title: "Login Pengguna",
-    desc: "Masuk untuk membuat tiket bantuan, mengikuti status penanganan, dan berbicara langsung dengan petugas.",
+    title: "Portal Pengguna",
+    desc: "Masuk sebagai nasabah untuk melihat saldo, transaksi, membuat ticket, dan menerima transparansi aktivitas sensitif.",
     badge: "USER",
+    icon: UserRound,
   },
   {
     href: "/login/staff",
-    title: "Login Petugas",
-    desc: "Masuk sebagai CS atau Admin untuk memproses tiket, melakukan monitoring, dan melihat audit real-time.",
-    badge: "STAFF",
+    title: "Workspace Staff",
+    desc: "Masuk sebagai CS atau Admin untuk menguji assignment ticket, JIT access, audit log, dan terminal trace.",
+    badge: "CS / ADMIN",
+    icon: Headphones,
   },
 ];
 
@@ -25,43 +27,55 @@ export default function LoginChooserPage() {
   useAuthedRedirect();
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,rgba(99,102,241,0.18),transparent_24%),linear-gradient(180deg,#eef4ff_0%,#f8fbff_50%,#f4f7fb_100%)] px-4 py-6 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[#f6f7f4] px-4 py-6 sm:px-6">
       <div className="mx-auto max-w-6xl">
-        <div className="rounded-[32px] border border-white/70 bg-white/85 p-6 shadow-[0_24px_70px_rgba(15,23,42,0.08)] backdrop-blur sm:p-8">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="flex items-center justify-between">
+          <LogoMark compact />
+          <Link href="/homepage">
+            <Button variant="secondary" size="sm">Landing</Button>
+          </Link>
+        </div>
+
+        <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_48px_rgba(16,24,32,0.07)] sm:p-8">
+          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
             <div>
-              <LogoMark />
-              <div className="mt-8 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Choose your workspace</div>
-              <h1 className="mt-3 text-4xl font-semibold tracking-tight text-slate-950">Akses portal DompetKu sesuai peran Anda.</h1>
-              <p className="mt-4 max-w-2xl text-sm leading-7 text-slate-500">
-                Pilih portal pengguna untuk pengalaman layanan pelanggan, atau portal petugas untuk workflow operasional dan compliance.
+              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
+                <ShieldCheck className="h-4 w-4" />
+                Role-based entry point
+              </div>
+              <h1 className="mt-5 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">Pilih ruang uji sesuai aktor sistem.</h1>
+              <p className="mt-4 text-sm leading-7 text-slate-600">
+                Frontend ini sengaja memisahkan pengalaman pengguna, Customer Support, dan Administrator agar pengujian RBAC, Least Privilege, dan JIT dapat terlihat dari alur yang berbeda.
               </p>
             </div>
-            <Link href="/">
-              <Button variant="secondary" className="h-12">Kembali ke Landing</Button>
-            </Link>
+            <div className="grid gap-4 sm:grid-cols-2">
+              {options.map((option) => {
+                const Icon = option.icon;
+                return (
+                  <Link
+                    key={option.href}
+                    href={option.href}
+                    className="group rounded-xl border border-slate-200 bg-[#fbfcf8] p-5 transition hover:border-emerald-300 hover:bg-emerald-50/40"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-950 text-white">
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">{option.badge}</span>
+                    </div>
+                    <div className="mt-5 text-xl font-semibold text-slate-950">{option.title}</div>
+                    <div className="mt-2 text-sm leading-6 text-slate-600">{option.desc}</div>
+                    <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-emerald-800">
+                      Lanjutkan
+                      <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
           </div>
-
-          <div className="mt-8 grid gap-5 lg:grid-cols-2">
-            {options.map((option) => (
-              <Card key={option.href} className="overflow-hidden border-slate-200/80 bg-[linear-gradient(180deg,#ffffff,#f8fbff)]">
-                <CardBody className="p-7">
-                  <div className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-slate-600">
-                    {option.badge}
-                  </div>
-                  <div className="mt-5 text-2xl font-semibold tracking-tight text-slate-950">{option.title}</div>
-                  <div className="mt-3 text-sm leading-7 text-slate-500">{option.desc}</div>
-                  <div className="mt-6">
-                    <Link href={option.href}>
-                      <Button className="h-12 w-full">Lanjutkan</Button>
-                    </Link>
-                  </div>
-                </CardBody>
-              </Card>
-            ))}
-          </div>
-        </div>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }

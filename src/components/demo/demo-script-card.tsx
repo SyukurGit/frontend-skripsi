@@ -19,8 +19,8 @@ export function DemoScriptCard({
       <CardBody className="pt-4">
         <div className="space-y-3">
           {steps.map((step, index) => (
-            <div key={step} className="flex gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
-              <div className="flex h-7 w-7 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">{index + 1}</div>
+            <div key={step} className="flex gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-emerald-700 text-xs font-bold text-white">{index + 1}</div>
               <div className="text-sm leading-6 text-slate-600">{step}</div>
             </div>
           ))}
