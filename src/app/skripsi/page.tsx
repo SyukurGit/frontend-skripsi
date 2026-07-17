@@ -160,7 +160,7 @@ export default function SkripsiPage() {
   }, [viewer]);
 
   return (
-    <main className="min-h-screen bg-[#f4f1ea] text-[#183142]">
+    <main className="min-h-screen bg-[#ffffff] text-[#183142]">
       <header className="sticky top-0 z-40 border-b border-[#d9d5cc] bg-[#f4f1ea]/95 backdrop-blur-xl">
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6 lg:px-8">
           <a href="#top" className="min-w-0" aria-label="Kembali ke bagian atas">
@@ -489,7 +489,7 @@ export default function SkripsiPage() {
         </section>
       </div>
 
-      <footer className="border-t border-[#d9d5cc] bg-[#eeeae2]">
+      <footer className="border-t border-[#fcfcfc] bg-[#eeeae2]">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-7 text-xs text-[#65726e] sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <p>© {thesisMeta.buildDate} {thesisMeta.author}. Halaman ringkasan tugas akhir.</p>
           <a href="#top" className="font-extrabold text-[#183142] hover:text-[#0f766e]">Kembali ke atas ↑</a>
