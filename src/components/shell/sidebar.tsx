@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import clsx from "clsx";
-import type React from "react";
+import * as Tooltip from "@radix-ui/react-tooltip";
+import { motion } from "motion/react";
 import {
   Activity,
   BarChart3,
@@ -13,214 +13,197 @@ import {
   History,
   Home,
   LogOut,
-  Menu,
   MessageSquare,
   MonitorDot,
   PanelLeftClose,
   PanelLeftOpen,
-  ShieldCheck,
   Ticket,
   UserRoundCog,
   Users,
-  X,
 } from "lucide-react";
+import type React from "react";
 import { LogoMark } from "@/components/branding/logo-mark";
 import { useShell } from "@/components/shell/shell-context";
 import { useLogout } from "@/services/queries";
 import { useAuthStore } from "@/store/auth";
 import { useToastStore } from "@/store/toast";
 import { getErrorMessage } from "@/utils/api-error";
+import { cn } from "@/utils/cn";
 
 type NavItem = {
   href: string;
   label: string;
-  desc: string;
   icon: React.ComponentType<{ className?: string }>;
 };
+
+const roleLabel = {
+  user: "Pengguna",
+  cs: "Customer Support",
+  admin: "Administrator",
+} as const;
 
 function navForRole(role: "admin" | "cs" | "user"): NavItem[] {
   if (role === "admin") {
     return [
-      { href: "/admin", label: "Overview", desc: "Ringkasan kontrol", icon: BarChart3 },
-      { href: "/admin/logs", label: "Sesi & Audit", desc: "Jejak per ticket", icon: FileClock },
-      { href: "/admin/terminal", label: "Terminal", desc: "Trace backend", icon: MonitorDot },
-      { href: "/admin/stream", label: "Realtime", desc: "Event HIGH/MEDIUM", icon: Activity },
-      { href: "/admin/users", label: "Akun", desc: "User dan CS", icon: Users },
+      { href: "/admin", label: "Ringkasan", icon: BarChart3 },
+      { href: "/admin/logs", label: "Audit", icon: FileClock },
+      { href: "/admin/terminal", label: "Terminal", icon: MonitorDot },
+      { href: "/admin/stream", label: "Langsung", icon: Activity },
+      { href: "/admin/users", label: "Akun", icon: Users },
     ];
   }
   if (role === "cs") {
     return [
-      { href: "/cs", label: "Queue", desc: "Ticket terbuka", icon: Ticket },
-      { href: "/cs/my-tickets", label: "Assignment", desc: "Ticket saya", icon: UserRoundCog },
-      { href: "/cs/chat", label: "Chat", desc: "Percakapan aktif", icon: MessageSquare },
+      { href: "/cs", label: "Antrian", icon: Ticket },
+      { href: "/cs/my-tickets", label: "Penugasan", icon: UserRoundCog },
+      { href: "/cs/chat", label: "Chat", icon: MessageSquare },
     ];
   }
   return [
-    { href: "/user", label: "Dompet", desc: "Saldo dan akun", icon: Home },
-    { href: "/user/transactions", label: "Transaksi", desc: "Riwayat dana", icon: CreditCard },
-    { href: "/user/history", label: "Aktivitas", desc: "Jejak akun", icon: History },
-    { href: "/user/tickets", label: "Bantuan", desc: "Ticket support", icon: Headphones },
+    { href: "/user", label: "Dompet", icon: Home },
+    { href: "/user/transactions", label: "Transaksi", icon: CreditCard },
+    { href: "/user/history", label: "Aktivitas", icon: History },
+    { href: "/user/tickets", label: "Bantuan", icon: Headphones },
   ];
 }
 
-function roleCopy(role: "admin" | "cs" | "user") {
-  if (role === "admin") {
-    return {
-      label: "Administrator",
-      title: "Audit Control Room",
-      desc: "Pantau session, JIT, dan jejak keputusan backend.",
-      tone: "border-cyan-900/50 bg-cyan-950/25 text-cyan-100",
-    };
-  }
-  if (role === "cs") {
-    return {
-      label: "Customer Support",
-      title: "Ticket-bound Workspace",
-      desc: "Akses hanya berlaku pada ticket yang ditugaskan.",
-      tone: "border-emerald-900/50 bg-emerald-950/25 text-emerald-100",
-    };
-  }
-  return {
-    label: "Pengguna",
-    title: "Dompet Digital",
-    desc: "Support dan transaksi berada dalam satu konteks akun.",
-    tone: "border-amber-900/50 bg-amber-950/25 text-amber-100",
-  };
+function isActivePath(pathname: string, href: string, role: string) {
+  return pathname === href || (href !== `/${role}` && pathname.startsWith(href));
 }
 
 export function Sidebar() {
   const pathname = usePathname();
-  const user = useAuthStore((s) => s.user);
-  const clear = useAuthStore((s) => s.clear);
-  const toast = useToastStore((s) => s.push);
+  const user = useAuthStore((state) => state.user);
+  const clear = useAuthStore((state) => state.clear);
+  const toast = useToastStore((state) => state.push);
   const logout = useLogout();
-  const { mobileOpen, setMobileOpen, collapsed, setCollapsed } = useShell();
+  const { collapsed, setCollapsed } = useShell();
 
   if (!user) return null;
-
   const items = navForRole(user.role);
-  const copy = roleCopy(user.role);
 
   async function handleLogout() {
     try {
       await logout.mutateAsync();
       clear();
-      toast({ kind: "info", title: "Berhasil logout" });
+      toast({ kind: "info", title: "Sesi ditutup" });
     } catch (error) {
       const status = (error as { response?: { status?: number } }).response?.status;
-      if (status !== 401) {
-        toast({ kind: "error", title: "Logout gagal", detail: getErrorMessage(error, "Logout gagal") });
-      }
+      if (status === 401) clear();
+      else toast({ kind: "error", title: "Gagal keluar", detail: getErrorMessage(error, "Gagal keluar") });
     }
   }
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setMobileOpen(true)}
-        className="fixed left-4 top-4 z-40 inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-800 shadow-sm md:hidden"
-        aria-label="Buka navigasi"
-      >
-        <Menu className="h-5 w-5" />
-      </button>
-      <div
-        className={clsx("fixed inset-0 z-40 bg-slate-950/45 backdrop-blur-sm transition-opacity md:hidden", mobileOpen ? "opacity-100" : "pointer-events-none opacity-0")}
-        onClick={() => setMobileOpen(false)}
-      />
+    <Tooltip.Provider delayDuration={350}>
       <aside
-        className={clsx(
-          "fixed inset-y-0 left-0 z-50 flex flex-col bg-[#101820] text-white transition-all duration-300 md:sticky md:z-auto md:h-screen md:translate-x-0",
-          collapsed ? "w-[88px]" : "w-[284px]",
-          mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full md:translate-x-0",
+        className={cn(
+          "sticky top-0 hidden h-screen shrink-0 border-r border-[#dfe3e8] bg-white transition-[width] duration-200 md:flex md:flex-col",
+          collapsed ? "w-[84px]" : "w-[248px]",
         )}
       >
-        <div className="flex h-full flex-col border-r border-white/10">
-          <div className="flex items-center justify-between border-b border-white/10 px-4 py-4">
-            <div className={clsx("min-w-0", collapsed && "mx-auto")}>
-              {!collapsed ? <LogoMark inverse compact /> : <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-600 text-sm font-bold">DK</div>}
-            </div>
-            <button type="button" onClick={() => setMobileOpen(false)} className="rounded-lg p-2 text-white/70 hover:bg-white/10 md:hidden" aria-label="Tutup navigasi">
-              <X className="h-5 w-5" />
-            </button>
-          </div>
+        <div className={cn("flex h-[72px] items-center border-b border-[#e9ecf0] px-5", collapsed && "justify-center px-3")}>
+          {collapsed ? (
+            <div className="flex h-9 w-9 items-center justify-center rounded-md bg-[#22262f] text-xs font-bold text-white">DK</div>
+          ) : (
+            <LogoMark compact />
+          )}
+        </div>
 
-          <div className="px-3 py-4">
-            <div className={clsx("rounded-xl border p-3", copy.tone, collapsed && "p-2 text-center")}>
-              {!collapsed ? (
-                <>
-                  <div className="text-[11px] font-semibold uppercase text-white/70">{copy.label}</div>
-                  <div className="mt-2 text-sm font-semibold">{copy.title}</div>
-                  <div className="mt-1 text-xs leading-5 text-white/70">{copy.desc}</div>
-                </>
-              ) : (
-                <ShieldCheck className="mx-auto h-5 w-5" />
-              )}
-            </div>
-          </div>
-
-          <nav className="flex-1 space-y-1 overflow-y-auto px-3 pb-4">
+        <div className={cn("px-3 pt-5", collapsed && "px-2")}>
+          {!collapsed ? (
+            <div className="mb-3 px-3 text-[11px] font-semibold text-[#98a0ad]">{roleLabel[user.role]}</div>
+          ) : null}
+          <nav className="space-y-1">
             {items.map((item) => {
-              const active = pathname === item.href || (item.href !== `/${user.role}` && pathname.startsWith(item.href));
+              const active = isActivePath(pathname, item.href, user.role);
               const Icon = item.icon;
-              return (
+              const link = (
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => setMobileOpen(false)}
-                  title={collapsed ? item.label : undefined}
-                  className={clsx(
-                    "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition",
-                    active ? "bg-white text-slate-950 shadow-sm" : "text-white/72 hover:bg-white/8 hover:text-white",
+                  className={cn(
+                    "relative flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium",
+                    active ? "text-[#0f55ba]" : "text-[#596170] hover:bg-[#f4f6f8] hover:text-[#171a21]",
                     collapsed && "justify-center px-0",
                   )}
                 >
-                  <span className={clsx("flex h-9 w-9 shrink-0 items-center justify-center rounded-lg", active ? "bg-emerald-50 text-emerald-700" : "bg-white/8 text-white/72 group-hover:text-white")}>
-                    <Icon className="h-[18px] w-[18px]" />
-                  </span>
-                  {!collapsed ? (
-                    <span className="min-w-0">
-                      <span className="block font-semibold">{item.label}</span>
-                      <span className={clsx("mt-0.5 block truncate text-xs", active ? "text-slate-500" : "text-white/45")}>{item.desc}</span>
-                    </span>
+                  {active ? (
+                    <motion.span
+                      layoutId="desktop-nav-active"
+                      className="absolute inset-0 rounded-md bg-[#edf4ff]"
+                      transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                    />
                   ) : null}
+                  <Icon className="relative z-10 h-[18px] w-[18px] shrink-0" />
+                  {!collapsed ? <span className="relative z-10">{item.label}</span> : null}
                 </Link>
+              );
+              return collapsed ? (
+                <Tooltip.Root key={item.href}>
+                  <Tooltip.Trigger asChild>{link}</Tooltip.Trigger>
+                  <Tooltip.Portal>
+                    <Tooltip.Content side="right" sideOffset={8} className="z-50 rounded-md bg-[#22262f] px-2.5 py-1.5 text-xs text-white shadow-lg">
+                      {item.label}
+                    </Tooltip.Content>
+                  </Tooltip.Portal>
+                </Tooltip.Root>
+              ) : (
+                link
               );
             })}
           </nav>
+        </div>
 
-          <div className="border-t border-white/10 p-3">
-            <div className={clsx("mb-3 flex items-center gap-3 rounded-lg bg-white/7 p-3", collapsed && "justify-center p-2")}>
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-600 text-xs font-bold">{user.email.slice(0, 1).toUpperCase()}</div>
-              {!collapsed ? (
-                <div className="min-w-0">
-                  <div className="truncate text-xs font-semibold">{user.email}</div>
-                  <div className="text-[11px] uppercase text-white/45">{user.role}</div>
-                </div>
-              ) : null}
+        <div className="mt-auto border-t border-[#e9ecf0] p-3">
+          {!collapsed ? (
+            <div className="mb-2 min-w-0 px-2 py-2">
+              <div className="truncate text-xs font-semibold text-[#252932]">{user.email}</div>
+              <div className="mt-0.5 text-[11px] text-[#7b8492]">{roleLabel[user.role]}</div>
             </div>
-            <div className={clsx("flex gap-2", collapsed && "flex-col")}>
-              <button
-                type="button"
-                onClick={() => setCollapsed(!collapsed)}
-                className="hidden h-10 flex-1 items-center justify-center rounded-lg border border-white/10 text-white/70 hover:bg-white/8 hover:text-white lg:inline-flex"
-                aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-              >
-                {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-              </button>
-              <button
-                type="button"
-                onClick={handleLogout}
-                disabled={logout.isPending}
-                className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-lg bg-white text-sm font-semibold text-slate-950 hover:bg-slate-100 disabled:opacity-60"
-              >
-                <LogOut className="h-4 w-4" />
-                {!collapsed ? (logout.isPending ? "Logout..." : "Logout") : null}
-              </button>
-            </div>
+          ) : null}
+          <div className={cn("flex gap-2", collapsed && "flex-col")}>
+            <button
+              type="button"
+              onClick={() => setCollapsed(!collapsed)}
+              className="inline-flex h-10 flex-1 items-center justify-center rounded-md border border-[#dfe3e8] text-[#667085] hover:bg-[#f4f6f8]"
+              aria-label={collapsed ? "Perluas navigasi" : "Ringkas navigasi"}
+            >
+              {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+            </button>
+            <button
+              type="button"
+              onClick={handleLogout}
+              disabled={logout.isPending}
+              className="inline-flex h-10 flex-1 items-center justify-center gap-2 rounded-md bg-[#22262f] px-3 text-xs font-semibold text-white hover:bg-[#101217] disabled:opacity-50"
+            >
+              <LogOut className="h-4 w-4" />
+              {!collapsed ? "Keluar" : null}
+            </button>
           </div>
         </div>
       </aside>
-    </>
+
+      <nav className="safe-bottom fixed inset-x-0 bottom-0 z-50 grid border-t border-[#dfe3e8] bg-white/96 px-2 pt-2 backdrop-blur md:hidden" style={{ gridTemplateColumns: `repeat(${items.length}, minmax(0, 1fr))` }}>
+        {items.map((item) => {
+          const active = isActivePath(pathname, item.href, user.role);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                "relative flex min-w-0 flex-col items-center gap-1 rounded-md px-1 py-1.5 text-[10px] font-medium",
+                active ? "text-[#0f55ba]" : "text-[#7b8492]",
+              )}
+            >
+              {active ? <motion.span layoutId="mobile-nav-active" className="absolute inset-x-2 top-0 h-0.5 rounded-full bg-[var(--brand)]" /> : null}
+              <Icon className="h-[19px] w-[19px]" />
+              <span className="max-w-full truncate">{item.label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+    </Tooltip.Provider>
   );
 }

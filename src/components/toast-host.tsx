@@ -1,17 +1,18 @@
 "use client";
 
 import * as React from "react";
+import { CheckCircle2, CircleAlert, Info, X } from "lucide-react";
 import clsx from "clsx";
 import { useToastStore } from "@/store/toast";
 
 function kindClasses(kind: "success" | "error" | "info") {
   switch (kind) {
     case "success":
-      return "border-emerald-200 bg-emerald-50 text-emerald-950";
+      return "border-[#cde3d7] bg-white text-[#236847]";
     case "error":
-      return "border-rose-200 bg-rose-50 text-rose-950";
+      return "border-[#f0c7cd] bg-white text-[#a92637]";
     default:
-      return "border-sky-200 bg-sky-50 text-sky-950";
+      return "border-[#c8daf8] bg-white text-[#1356b8]";
   }
 }
 
@@ -31,25 +32,28 @@ export function ToastHost() {
         <div
           key={t.id}
           className={clsx(
-            "rounded-xl border px-4 py-3 shadow-sm backdrop-blur",
+            "rounded-lg border px-4 py-3 shadow-[0_12px_30px_rgba(17,26,36,0.12)]",
             "animate-[toast-in_180ms_ease-out]",
             kindClasses(t.kind),
           )}
           role="status"
         >
           <div className="flex items-start justify-between gap-3">
-            <div>
+            <div className="flex items-start gap-3">
+              {t.kind === "success" ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /> : t.kind === "error" ? <CircleAlert className="mt-0.5 h-4 w-4 shrink-0" /> : <Info className="mt-0.5 h-4 w-4 shrink-0" />}
+              <div>
               <div className="text-sm font-semibold leading-5">{t.title}</div>
               {t.detail ? (
                 <div className="mt-0.5 text-sm/5 opacity-90">{t.detail}</div>
               ) : null}
+              </div>
             </div>
             <button
               onClick={() => dismiss(t.id)}
-              className="rounded-md px-2 py-1 text-xs font-semibold opacity-70 hover:opacity-100"
-              aria-label="Dismiss"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md opacity-60 hover:bg-black/5 hover:opacity-100"
+              aria-label="Tutup"
             >
-              Close
+              <X className="h-3.5 w-3.5" />
             </button>
           </div>
         </div>

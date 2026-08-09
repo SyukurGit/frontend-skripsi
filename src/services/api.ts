@@ -32,7 +32,7 @@ api.interceptors.response.use(
     if (status === 401 && token && !url.includes("/auth/login")) {
       useToastStore
         .getState()
-        .push({ kind: "error", title: "Session expired", detail: "Session expired, silakan login ulang" });
+        .push({ kind: "error", title: "Sesi berakhir", detail: "Silakan masuk kembali untuk melanjutkan." });
       useAuthStore.getState().clear();
     }
 
@@ -40,7 +40,7 @@ api.interceptors.response.use(
     if (!status || status >= 500) {
       useToastStore
         .getState()
-        .push({ kind: "error", title: "Server error", detail: String(msg) });
+        .push({ kind: "error", title: "Layanan tidak tersedia", detail: String(msg) });
     }
 
     return Promise.reject(err);

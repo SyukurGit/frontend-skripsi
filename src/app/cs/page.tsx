@@ -6,7 +6,6 @@ import { Topbar } from "@/components/shell/topbar";
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/badge";
 import { DataPanel, EmptyState, PageHeader, Pill } from "@/components/ui/page";
-import { StatCard } from "@/components/ui/stat-card";
 import { useCsClaimTicket, useCsMyTickets, useCsOpenTickets } from "@/services/queries";
 import { useToastStore } from "@/store/toast";
 import { getErrorMessage } from "@/utils/api-error";
@@ -19,104 +18,134 @@ export default function CsHome() {
 
   const openItems = open.data ?? [];
   const assignedItems = my.data ?? [];
-  const activeCount = assignedItems.filter((t) => t.status === "CLAIMED" || t.status === "IN_PROGRESS").length;
-  const resolvedCount = assignedItems.filter((t) => t.status === "RESOLVED").length;
+  const activeItems = assignedItems.filter((ticket) => ticket.status === "CLAIMED" || ticket.status === "IN_PROGRESS");
+  const visibleActiveItems = activeItems.slice(0, 2);
+  const activeCount = activeItems.length;
   const atLimit = activeCount >= 2;
+  const availableSlots = Math.max(0, 2 - activeCount);
 
   return (
     <div>
-      <Topbar title="CS Workspace" subtitle="Queue bantuan dengan akses berbasis assignment" />
+      <Topbar title="Customer Support" subtitle="Antrian dan assignment tiket" />
       <PageHeader
-        eyebrow="Ticket-bound workspace"
-        title="Ambil ticket hanya saat masih ada kapasitas penugasan"
-        description="CS tidak bekerja dari daftar seluruh pengguna. Semua akses dimulai dari ticket yang diambil, lalu dipersempit lagi oleh status dan sesi JIT."
+        eyebrow="Workspace operasional"
+        title="Antrian Customer Support"
+        description="Ambil tiket dari antrian untuk membentuk assignment. Assignment tiket menjadi batas akses Customer Support sebelum percakapan dan data pengguna dapat dibuka."
         actions={
-          <Link href="/cs/my-tickets">
-            <Button variant="dark">
+          <Button asChild variant="dark">
+            <Link href="/cs/my-tickets">
               <UserRoundCheck className="h-4 w-4" />
-              Ticket saya
-            </Button>
-          </Link>
+              Tiket saya
+            </Link>
+          </Button>
         }
-        meta={atLimit ? <Pill tone="warning">Kapasitas penuh: 2/2 aktif</Pill> : <Pill tone="success">Slot tersedia: {activeCount}/2 aktif</Pill>}
+        meta={
+          <>
+            <Pill tone={openItems.length > 0 ? "info" : "neutral"}>{openItems.length} tiket menunggu</Pill>
+            <Pill tone={atLimit ? "warning" : "success"}>
+              {atLimit ? "Kapasitas penuh 2/2" : `${availableSlots} slot tersedia`}
+            </Pill>
+          </>
+        }
       />
 
-      <section className="grid gap-4 md:grid-cols-3">
-        <StatCard label="Queue masuk" value={openItems.length} hint="OPEN dan belum ditugaskan" tone="info" />
-        <StatCard label="Aktif ditangani" value={`${activeCount}/2`} hint="CLAIMED atau IN_PROGRESS" tone={atLimit ? "warning" : "success"} />
-        <StatCard label="Resolved" value={resolvedCount} hint="Menunggu ditutup pengguna/admin flow" tone="neutral" />
-      </section>
-
-      <section className="mt-5 grid gap-5 xl:grid-cols-[1fr_0.48fr]">
-        <DataPanel title="Queue ticket masuk" description="Claim ticket untuk mengikat konteks kerja ke akun CS ini.">
+      <section className="grid items-start gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+        <DataPanel
+          title="Antrian masuk"
+          description="Tiket yang belum memiliki penanggung jawab. Ambil sesuai urutan dan kapasitas kerja."
+          actions={<Pill tone={openItems.length > 0 ? "info" : "neutral"}>{openItems.length} menunggu</Pill>}
+        >
           {open.isLoading ? <div className="text-sm text-slate-500">Memuat antrian...</div> : null}
           {open.isError ? <div className="text-sm text-rose-700">{getErrorMessage(open.error, "Gagal memuat antrian")}</div> : null}
           {!open.isLoading && !open.isError ? (
             <div className="space-y-3">
-              {openItems.map((ticket) => (
-                <div key={ticket.id} className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-100 text-cyan-700">
-                        <Inbox className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <div className="font-semibold text-slate-950">Ticket #{ticket.id}</div>
-                          <StatusBadge status={ticket.status} />
+              {openItems.map((ticket, index) => {
+                const isClaiming = claim.isPending && claim.variables === ticket.id;
+
+                return (
+                  <div key={ticket.id} className="rounded-lg border border-slate-200 bg-white p-4">
+                    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex min-w-0 items-start gap-3">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 text-indigo-700">
+                          <Inbox className="h-5 w-5" />
                         </div>
-                        <div className="mt-1 text-sm text-slate-500">Belum ada CS yang memiliki scope akses ke ticket ini.</div>
+                        <div className="min-w-0">
+                          <div className="text-xs font-semibold uppercase text-slate-500">Urutan {String(index + 1).padStart(2, "0")}</div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <div className="font-semibold text-slate-950">Tiket #{ticket.id}</div>
+                            <StatusBadge status={ticket.status} />
+                          </div>
+                          <div className="mt-1 text-sm text-slate-500">Belum memiliki assignment Customer Support.</div>
+                        </div>
                       </div>
+                      <Button
+                        className="w-full sm:w-auto"
+                        disabled={atLimit || claim.isPending}
+                        onClick={async () => {
+                          try {
+                            await claim.mutateAsync(ticket.id);
+                            toast({ kind: "success", title: "Tiket masuk ke assignment", detail: `Tiket #${ticket.id}` });
+                          } catch (error) {
+                            toast({ kind: "error", title: "Gagal mengambil tiket", detail: getErrorMessage(error, "Gagal") });
+                          }
+                        }}
+                      >
+                        {isClaiming ? "Mengambil..." : atLimit ? "Kapasitas penuh" : "Ambil tiket"}
+                      </Button>
                     </div>
-                    <Button
-                      disabled={atLimit || claim.isPending}
-                      onClick={async () => {
-                        try {
-                          await claim.mutateAsync(ticket.id);
-                          toast({ kind: "success", title: "Ticket berhasil diambil", detail: `#${ticket.id}` });
-                        } catch (error) {
-                          toast({ kind: "error", title: "Gagal mengambil ticket", detail: getErrorMessage(error, "Gagal") });
-                        }
-                      }}
-                    >
-                      {atLimit ? "Limit 2 ticket" : "Ambil ticket"}
-                    </Button>
                   </div>
-                </div>
-              ))}
-              {openItems.length === 0 ? <EmptyState title="Queue kosong" description="Tidak ada ticket OPEN yang menunggu assignment." /> : null}
+                );
+              })}
+              {openItems.length === 0 ? (
+                <EmptyState title="Antrian kosong" description="Belum ada tiket baru yang menunggu Customer Support." />
+              ) : null}
             </div>
           ) : null}
         </DataPanel>
 
-        <DataPanel title="Ticket saya" description="Akses operasional hanya berasal dari daftar ini.">
+        <DataPanel
+          title="Sedang saya tangani"
+          description="Maksimal dua assignment aktif pada satu waktu."
+          actions={
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/cs/my-tickets">
+                Lihat detail
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+            </Button>
+          }
+        >
           <div className="space-y-3">
-            {assignedItems.slice(0, 5).map((ticket) => (
+            {visibleActiveItems.map((ticket) => (
               <Link
                 key={ticket.id}
                 href={`/cs/tickets/${ticket.id}`}
-                className="flex items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 transition hover:border-emerald-300 hover:bg-emerald-50"
+                className="flex min-w-0 items-center justify-between gap-3 rounded-lg border border-slate-200 bg-white p-4 transition hover:border-indigo-200 hover:bg-indigo-50/40"
               >
-                <div>
-                  <div className="font-semibold text-slate-950">Ticket #{ticket.id}</div>
-                  <div className="mt-1 text-sm text-slate-500">Buka workspace</div>
+                <div className="min-w-0">
+                  <div className="font-semibold text-slate-950">Tiket #{ticket.id}</div>
+                  <div className="mt-1 text-sm text-slate-500">
+                    {ticket.status === "CLAIMED" ? "Siap mulai ditangani" : "Penanganan sedang berjalan"}
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex shrink-0 items-center gap-2">
                   <StatusBadge status={ticket.status} />
                   <ArrowRight className="h-4 w-4 text-slate-400" />
                 </div>
               </Link>
             ))}
-            {assignedItems.length === 0 ? <EmptyState title="Belum ada assignment" description="Claim ticket dari queue untuk memulai pengujian LP." /> : null}
+            {visibleActiveItems.length === 0 ? (
+              <EmptyState title="Belum ada tiket aktif" description="Ambil satu tiket dari antrian untuk membuka ruang kerja." />
+            ) : null}
             {atLimit ? (
               <div className="flex gap-3 rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-900">
                 <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
-                Selesaikan salah satu ticket aktif sebelum mengambil ticket baru.
+                Selesaikan satu assignment aktif sebelum mengambil tiket berikutnya.
               </div>
             ) : (
-              <div className="flex gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm leading-6 text-emerald-900">
+              <div className="flex gap-3 rounded-lg border border-indigo-200 bg-indigo-50 p-4 text-sm leading-6 text-indigo-900">
                 <LockKeyhole className="mt-0.5 h-5 w-5 shrink-0" />
-                Scope akses akan terbentuk setelah ticket berhasil diambil.
+                Akses hanya terbentuk untuk tiket yang masuk ke assignment Anda.
               </div>
             )}
           </div>

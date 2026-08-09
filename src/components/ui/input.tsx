@@ -1,5 +1,5 @@
 import * as React from "react";
-import clsx from "clsx";
+import { cn } from "@/utils/cn";
 
 export function Input({
   className,
@@ -7,9 +7,9 @@ export function Input({
 }: React.InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
-      className={clsx(
-        "h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900 shadow-[inset_0_1px_2px_rgba(16,24,32,0.035)]",
-        "placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-[color:var(--ring)]",
+      className={cn(
+        "h-10 w-full rounded-md border border-[#d6dbe1] bg-white px-3 text-sm text-[#252932] shadow-[inset_0_1px_1px_rgba(17,26,36,0.025)]",
+        "placeholder:text-[#98a0ad] focus:border-[var(--brand)] focus:outline-none focus:ring-4 focus:ring-[color:var(--ring)]",
         className,
       )}
       {...props}
@@ -23,9 +23,9 @@ export function Select({
 }: React.SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select
-      className={clsx(
-        "h-10 w-full rounded-lg border border-slate-200 bg-white px-3 text-sm text-slate-900",
-        "focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-[color:var(--ring)]",
+      className={cn(
+        "h-10 w-full rounded-md border border-[#d6dbe1] bg-white px-3 text-sm text-[#252932]",
+        "focus:border-[var(--brand)] focus:outline-none focus:ring-4 focus:ring-[color:var(--ring)]",
         className,
       )}
       {...props}
@@ -39,9 +39,9 @@ export function Textarea({
 }: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea
-      className={clsx(
-        "w-full rounded-lg border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-900",
-        "placeholder:text-slate-400 focus:border-emerald-500 focus:outline-none focus:ring-4 focus:ring-[color:var(--ring)]",
+      className={cn(
+        "w-full rounded-md border border-[#d6dbe1] bg-white px-3 py-2.5 text-sm text-[#252932]",
+        "placeholder:text-[#98a0ad] focus:border-[var(--brand)] focus:outline-none focus:ring-4 focus:ring-[color:var(--ring)]",
         className,
       )}
       {...props}

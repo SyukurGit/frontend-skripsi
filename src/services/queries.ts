@@ -185,7 +185,6 @@ export function useRequestJit(ticketId: number) {
 	return useMutation({
 		mutationFn: (feature: string) => postData<JitRequestResponse>(`/cs/tickets/${ticketId}/jit/request`, { feature }),
 		onSuccess: () => {
-			qc.invalidateQueries({ queryKey: qk.profile(ticketId) });
 			qc.invalidateQueries({ queryKey: qk.messages(ticketId) });
 		},
 	});

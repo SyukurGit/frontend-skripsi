@@ -1,11 +1,23 @@
 "use client";
 
 import * as React from "react";
-import { CheckCircle2, Eye, Hash, KeyRound, Loader2, Mail, ShieldCheck, TimerReset, Unlock, XCircle } from "lucide-react";
+import {
+  Check,
+  Clock3,
+  Eye,
+  Hash,
+  KeyRound,
+  Loader2,
+  LockKeyhole,
+  Mail,
+  ShieldCheck,
+  Unlock,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardBody } from "@/components/ui/card";
 import { Input, Select } from "@/components/ui/input";
 import { Pill } from "@/components/ui/page";
+import { ticketStatusLabel } from "@/components/ui/badge";
 import { useCountdown } from "@/hooks/use-countdown";
 import { useRequestJit, useSensitiveAction } from "@/services/queries";
 import { useJitStore, type JitFeature } from "@/store/jit";
@@ -13,271 +25,197 @@ import { useToastStore } from "@/store/toast";
 import type { TicketStatus } from "@/types/api";
 import { getErrorMessage } from "@/utils/api-error";
 import { formatDurationMs } from "@/utils/format";
+import { cn } from "@/utils/cn";
 
-type StepState = "idle" | "checking" | "passed" | "failed";
-
-const features: { key: JitFeature; label: string; desc: string }[] = [
-  { key: "VIEW_KYC", label: "Buka KYC", desc: "Membuka profil detail pengguna secara sementara." },
-  { key: "RESET_PASSWORD", label: "Reset password", desc: "Mengganti password pengguna pada konteks ticket." },
-  { key: "UNBLOCK_ACCOUNT", label: "Buka blokir", desc: "Mengaktifkan kembali akun yang terblokir." },
-  { key: "CHANGE_EMAIL", label: "Ubah email", desc: "Mengubah email akun pengguna." },
-  { key: "RESET_PIN", label: "Reset PIN", desc: "Mengganti PIN transaksi pengguna." },
+const features: {
+  key: JitFeature;
+  label: string;
+  description: string;
+  icon: typeof Eye;
+}[] = [
+  { key: "VIEW_KYC", label: "Lihat data KYC", description: "Membuka sebagian data profil yang relevan dan tetap dimasking.", icon: Eye },
+  { key: "RESET_PASSWORD", label: "Reset password", description: "Mengganti password pengguna pada konteks ticket.", icon: KeyRound },
+  { key: "UNBLOCK_ACCOUNT", label: "Buka blokir", description: "Mengaktifkan kembali akun pengguna yang terblokir.", icon: Unlock },
+  { key: "CHANGE_EMAIL", label: "Ubah email", description: "Mengubah email akun pengguna.", icon: Mail },
+  { key: "RESET_PIN", label: "Reset PIN", description: "Mengganti PIN transaksi pengguna.", icon: Hash },
 ];
 
-function wait(ms: number) {
-  return new Promise((resolve) => window.setTimeout(resolve, ms));
-}
-
 export function JitPanel({ ticketId, ticketStatus }: { ticketId: number; ticketStatus?: TicketStatus }) {
-  const toast = useToastStore((s) => s.push);
+  const toast = useToastStore((state) => state.push);
   const requestJit = useRequestJit(ticketId);
-  const setSession = useJitStore((s) => s.set);
-  const isActive = useJitStore((s) => s.isActive);
-  const clear = useJitStore((s) => s.clear);
-
+  const setSession = useJitStore((state) => state.set);
+  const isActive = useJitStore((state) => state.isActive);
+  const clear = useJitStore((state) => state.clear);
   const [feature, setFeature] = React.useState<JitFeature>("VIEW_KYC");
-  const [decision, setDecision] = React.useState<"idle" | "granted" | "rejected">("idle");
-  const [decisionMessage, setDecisionMessage] = React.useState("");
-  const [stepStates, setStepStates] = React.useState<StepState[]>(["idle", "idle", "idle"]);
+  const [decision, setDecision] = React.useState<{ ok: boolean; message: string } | null>(null);
   const [newPassword, setNewPassword] = React.useState("");
   const [newEmail, setNewEmail] = React.useState("");
   const [newPin, setNewPin] = React.useState("");
 
-  const session = useJitStore((s) => s.get(ticketId, feature));
-  const targetEpochMs = session ? new Date(session.expiredAt).getTime() : 0;
-  const countdown = useCountdown(targetEpochMs);
+  const selected = features.find((item) => item.key === feature) ?? features[0];
+  const SelectedIcon = selected.icon;
+  const session = useJitStore((state) => state.get(ticketId, feature));
+  const countdown = useCountdown(session ? new Date(session.expiredAt).getTime() : 0);
   const active = isActive(ticketId, feature);
   const canRequestJit = ticketStatus === "IN_PROGRESS";
-  const selectedFeature = features.find((item) => item.key === feature) ?? features[0];
-
-  const resetPwd = useSensitiveAction(ticketId, "reset-password");
+  const resetPassword = useSensitiveAction(ticketId, "reset-password");
   const unblock = useSensitiveAction(ticketId, "unblock-account");
   const changeEmail = useSensitiveAction(ticketId, "change-email");
   const resetPin = useSensitiveAction(ticketId, "reset-pin");
 
   React.useEffect(() => {
     if (!session) return;
-    const exp = new Date(session.expiredAt).getTime();
-    const ms = Math.max(0, exp - Date.now());
-    const t = window.setTimeout(() => clear(ticketId, feature), ms + 250);
-    return () => window.clearTimeout(t);
+    const delay = Math.max(0, new Date(session.expiredAt).getTime() - Date.now());
+    const timer = window.setTimeout(() => clear(ticketId, feature), delay + 250);
+    return () => window.clearTimeout(timer);
   }, [session, ticketId, feature, clear]);
 
   async function request() {
-    if (!canRequestJit) {
-      setDecision("rejected");
-      setDecisionMessage("Backend menolak karena status ticket belum IN_PROGRESS.");
-      setStepStates(["passed", "failed", "idle"]);
-      toast({ kind: "error", title: "JIT ditolak", detail: "Ubah status ticket ke IN_PROGRESS terlebih dahulu." });
-      return;
-    }
-
-    setDecision("idle");
-    setDecisionMessage("");
-    setStepStates(["checking", "idle", "idle"]);
-    await wait(260);
-    setStepStates(["passed", "checking", "idle"]);
-    await wait(260);
-    setStepStates(["passed", "passed", "checking"]);
-
+    if (!canRequestJit) return;
+    setDecision(null);
     try {
-      const res = await requestJit.mutateAsync(feature);
-      setSession({ ticketId, feature, expiredAt: res.expired_at });
-      setDecision("granted");
-      setDecisionMessage(`Sesi aktif sampai ${new Date(res.expired_at).toLocaleTimeString("id-ID")}.`);
-      setStepStates(["passed", "passed", "passed"]);
-      toast({ kind: "success", title: "JIT aktif", detail: `${selectedFeature.label} aktif sementara.` });
-    } catch (e: unknown) {
-      setDecision("rejected");
-      setDecisionMessage(getErrorMessage(e, "Permintaan akses sementara ditolak."));
-      setStepStates(["passed", "passed", "failed"]);
-      toast({ kind: "error", title: "JIT ditolak", detail: getErrorMessage(e, "Permintaan JIT ditolak") });
+      const response = await requestJit.mutateAsync(feature);
+      setSession({ ticketId, feature, expiredAt: response.expired_at });
+      setDecision({ ok: true, message: "Backend menerbitkan session setelah seluruh validasi konteks terpenuhi." });
+      toast({ kind: "success", title: "Session JIT diterbitkan", detail: `${selected.label} aktif sementara.` });
+    } catch (error) {
+      const message = getErrorMessage(error, "Permintaan session JIT ditolak");
+      setDecision({ ok: false, message });
+      toast({ kind: "error", title: "Session JIT tidak diterbitkan", detail: message });
     }
   }
 
-  async function runSensitiveAction(kind: JitFeature) {
+  async function runSensitiveAction() {
     try {
-      if (kind === "RESET_PASSWORD") {
-        await resetPwd.mutateAsync({ new_password: newPassword });
+      if (feature === "RESET_PASSWORD") {
+        await resetPassword.mutateAsync({ new_password: newPassword });
         setNewPassword("");
-      }
-      if (kind === "UNBLOCK_ACCOUNT") {
+      } else if (feature === "UNBLOCK_ACCOUNT") {
         await unblock.mutateAsync({});
-      }
-      if (kind === "CHANGE_EMAIL") {
+      } else if (feature === "CHANGE_EMAIL") {
         await changeEmail.mutateAsync({ new_email: newEmail });
         setNewEmail("");
-      }
-      if (kind === "RESET_PIN") {
+      } else if (feature === "RESET_PIN") {
         await resetPin.mutateAsync({ new_pin: newPin });
         setNewPin("");
       }
-      clear(ticketId, kind);
-      toast({ kind: "success", title: "Aksi sensitif berhasil", detail: kind });
+      clear(ticketId, feature);
+      setDecision({ ok: true, message: "Aksi berhasil dan session untuk feature ini telah dikonsumsi." });
+      toast({ kind: "success", title: "Aksi sensitif berhasil", detail: `${selected.label}; session telah dikonsumsi.` });
     } catch (error) {
       toast({ kind: "error", title: "Aksi sensitif gagal", detail: getErrorMessage(error, "Aksi sensitif gagal") });
     }
   }
 
-  const steps = [
-    { label: "Assignment valid", desc: "Ticket harus terikat ke CS yang sedang login." },
-    { label: "Status IN_PROGRESS", desc: "Backend menolak JIT di luar status penanganan." },
-    { label: "Fitur diizinkan", desc: "Akses diberikan hanya untuk fitur yang diminta." },
-  ];
+  const pending = resetPassword.isPending || unblock.isPending || changeEmail.isPending || resetPin.isPending;
+  const inputValid =
+    feature === "RESET_PASSWORD"
+      ? newPassword.trim().length >= 8
+      : feature === "CHANGE_EMAIL"
+        ? newEmail.trim().length > 0
+        : feature === "RESET_PIN"
+          ? /^\d{4,}$/.test(newPin.trim())
+          : true;
 
   return (
-    <Card className="overflow-hidden">
-      <div className="border-b border-slate-100 px-5 py-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <section className="overflow-hidden rounded-lg border border-[#dfe3e8] bg-white">
+      <div className="border-b border-[#e9ecf0] px-4 py-4 sm:px-5">
+        <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-base font-semibold text-slate-950">Just-In-Time access</div>
-            <div className="mt-1 text-sm leading-6 text-slate-500">Akses sensitif sementara berdasarkan ticket, status, dan fitur.</div>
+            <div className="flex items-center gap-2 text-sm font-semibold text-[#252932]">
+              <LockKeyhole className="h-4 w-4 text-[var(--brand)]" />
+              Just-In-Time Access
+            </div>
+            <p className="mt-1 text-xs leading-5 text-[#7b8492]">Session maksimal 15 menit, berlaku untuk satu feature, dan dikonsumsi setelah digunakan.</p>
           </div>
           <Pill tone={active ? "success" : canRequestJit ? "neutral" : "warning"}>
-            {active ? `Aktif ${formatDurationMs(countdown)}` : canRequestJit ? "Siap diajukan" : "Butuh IN_PROGRESS"}
+            {active ? formatDurationMs(countdown) : canRequestJit ? "Siap" : ticketStatusLabel[ticketStatus ?? "CLAIMED"]}
           </Pill>
         </div>
       </div>
-      <CardBody className="pt-5">
-        <div className="grid gap-3">
-          <div>
-            <label className="text-xs font-semibold uppercase text-slate-500">Fitur sensitif</label>
-            <Select value={feature} onChange={(e) => setFeature(e.target.value as JitFeature)} className="mt-2">
-              {features.map((item) => (
-                <option key={item.key} value={item.key}>
-                  {item.label}
-                </option>
-              ))}
-            </Select>
-            <div className="mt-2 text-sm leading-6 text-slate-500">{selectedFeature.desc}</div>
-          </div>
-          <Button onClick={request} disabled={requestJit.isPending || !canRequestJit}>
-            {requestJit.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
-            {requestJit.isPending ? "Memvalidasi..." : canRequestJit ? "Ajukan JIT" : "Ubah ke IN_PROGRESS"}
-          </Button>
+
+      <div className="space-y-5 p-4 sm:p-5">
+        <div>
+          <label className="text-xs font-semibold text-[#596170]">Feature sensitif</label>
+          <Select
+            value={feature}
+            onChange={(event) => {
+              setFeature(event.target.value as JitFeature);
+              setDecision(null);
+            }}
+            className="mt-2"
+          >
+            {features.map((item) => (
+              <option key={item.key} value={item.key}>{item.label}</option>
+            ))}
+          </Select>
+          <p className="mt-2 text-xs leading-5 text-[#7b8492]">{selected.description}</p>
         </div>
 
-        <div className="mt-5 space-y-3">
-          {steps.map((step, index) => {
-            const state = stepStates[index];
-            return (
-              <div key={step.label} className="flex gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <div className="mt-0.5">
-                  {state === "checking" ? <Loader2 className="h-5 w-5 animate-spin text-amber-600" /> : null}
-                  {state === "passed" ? <CheckCircle2 className="h-5 w-5 text-emerald-700" /> : null}
-                  {state === "failed" ? <XCircle className="h-5 w-5 text-rose-700" /> : null}
-                  {state === "idle" ? <TimerReset className="h-5 w-5 text-slate-400" /> : null}
-                </div>
-                <div>
-                  <div className="text-sm font-semibold text-slate-950">{step.label}</div>
-                  <div className="mt-1 text-sm leading-6 text-slate-500">{step.desc}</div>
-                </div>
-              </div>
-            );
-          })}
+        <div className="grid grid-cols-3 gap-px overflow-hidden rounded-md border border-[#dfe3e8] bg-[#dfe3e8]">
+          <ValidationCell label="Assignment" valid />
+          <ValidationCell label="Status" valid={canRequestJit} />
+          <ValidationCell label="Feature" valid />
         </div>
 
-        {decision !== "idle" ? (
-          <div className={`mt-4 rounded-lg border p-4 text-sm leading-6 ${decision === "granted" ? "border-emerald-200 bg-emerald-50 text-emerald-900" : "border-rose-200 bg-rose-50 text-rose-900"}`}>
-            {decision === "granted" ? "Permintaan disetujui. " : "Permintaan ditolak. "}
-            {decisionMessage}
+        <Button onClick={() => void request()} disabled={!canRequestJit || requestJit.isPending || active} className="w-full">
+          {requestJit.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />}
+          {active ? "Session sedang aktif" : canRequestJit ? "Minta session JIT" : `Butuh status ${ticketStatusLabel.IN_PROGRESS}`}
+        </Button>
+
+        {decision ? (
+          <div className={cn("flex gap-2 border-l-2 px-3 py-2.5 text-xs leading-5", decision.ok ? "border-[#3a8a63] bg-[#eef7f2] text-[#236847]" : "border-[#c83243] bg-[#fff1f3] text-[#a92637]")}>
+            {decision.ok ? <Check className="mt-0.5 h-4 w-4 shrink-0" /> : <X className="mt-0.5 h-4 w-4 shrink-0" />}
+            <span>{decision.message}</span>
           </div>
         ) : null}
 
-        <div className="mt-5 space-y-3">
-          <div className="text-sm font-semibold text-slate-950">Eksekusi fitur sensitif</div>
-          <ActionRow
-            icon={<Eye className="h-5 w-5" />}
-            title="Buka KYC"
-            desc="Request JIT VIEW_KYC lalu refresh profil di panel kiri."
-            active={isActive(ticketId, "VIEW_KYC")}
-          />
-          <ActionRow
-            icon={<KeyRound className="h-5 w-5" />}
-            title="Reset password"
-            desc="Minimal 8 karakter."
-            active={isActive(ticketId, "RESET_PASSWORD")}
-            input={<Input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="Password baru" />}
-            action={
-              <Button size="sm" variant="secondary" disabled={!isActive(ticketId, "RESET_PASSWORD") || resetPwd.isPending || newPassword.trim().length < 8} onClick={() => void runSensitiveAction("RESET_PASSWORD")}>
-                Jalankan
-              </Button>
-            }
-          />
-          <ActionRow
-            icon={<Unlock className="h-5 w-5" />}
-            title="Buka blokir"
-            desc="Membutuhkan sesi UNBLOCK_ACCOUNT aktif."
-            active={isActive(ticketId, "UNBLOCK_ACCOUNT")}
-            action={
-              <Button size="sm" variant="secondary" disabled={!isActive(ticketId, "UNBLOCK_ACCOUNT") || unblock.isPending} onClick={() => void runSensitiveAction("UNBLOCK_ACCOUNT")}>
-                Jalankan
-              </Button>
-            }
-          />
-          <ActionRow
-            icon={<Mail className="h-5 w-5" />}
-            title="Ubah email"
-            desc="Email baru dikirim ke backend."
-            active={isActive(ticketId, "CHANGE_EMAIL")}
-            input={<Input value={newEmail} onChange={(e) => setNewEmail(e.target.value)} placeholder="email-baru@example.com" />}
-            action={
-              <Button size="sm" variant="secondary" disabled={!isActive(ticketId, "CHANGE_EMAIL") || changeEmail.isPending || newEmail.trim() === ""} onClick={() => void runSensitiveAction("CHANGE_EMAIL")}>
-                Jalankan
-              </Button>
-            }
-          />
-          <ActionRow
-            icon={<Hash className="h-5 w-5" />}
-            title="Reset PIN"
-            desc="Minimal 4 digit."
-            active={isActive(ticketId, "RESET_PIN")}
-            input={<Input value={newPin} onChange={(e) => setNewPin(e.target.value)} placeholder="PIN baru" />}
-            action={
-              <Button size="sm" variant="secondary" disabled={!isActive(ticketId, "RESET_PIN") || resetPin.isPending || newPin.trim().length < 4} onClick={() => void runSensitiveAction("RESET_PIN")}>
-                Jalankan
-              </Button>
-            }
-          />
-        </div>
-      </CardBody>
-    </Card>
-  );
-}
-
-function ActionRow({
-  icon,
-  title,
-  desc,
-  active,
-  input,
-  action,
-}: {
-  icon: React.ReactNode;
-  title: string;
-  desc: string;
-  active: boolean;
-  input?: React.ReactNode;
-  action?: React.ReactNode;
-}) {
-  return (
-    <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-      <div className="flex items-start gap-3">
-        <div className={active ? "text-emerald-700" : "text-slate-400"}>{icon}</div>
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="font-semibold text-slate-950">{title}</div>
-            <Pill tone={active ? "success" : "neutral"}>{active ? "Aktif" : "Terkunci"}</Pill>
-          </div>
-          <div className="mt-1 text-sm leading-6 text-slate-500">{desc}</div>
-          {input || action ? (
-            <div className="mt-3 flex flex-col gap-2 sm:flex-row">
-              {input}
-              {action}
+        <div className="border-t border-[#e9ecf0] pt-5">
+          <div className="mb-3 flex items-center justify-between gap-3">
+            <div>
+              <div className="text-sm font-semibold text-[#252932]">Gunakan feature</div>
+              <div className="mt-0.5 text-xs text-[#7b8492]">{selected.label}</div>
             </div>
+            <Pill tone={active ? "success" : "neutral"}>{active ? "Session aktif" : "Terkunci"}</Pill>
+          </div>
+
+          {feature === "VIEW_KYC" ? (
+            <div className="border border-[#dfe3e8] bg-[#f8fafc] p-3 text-xs leading-5 text-[#667085]">
+              Setelah session aktif, gunakan tombol muat ulang pada profil pengguna. Backend akan mengonsumsi session ketika data diakses.
+            </div>
+          ) : null}
+          {feature === "RESET_PASSWORD" ? (
+            <Input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="Password baru, minimal 8 karakter" />
+          ) : null}
+          {feature === "CHANGE_EMAIL" ? (
+            <Input type="email" value={newEmail} onChange={(event) => setNewEmail(event.target.value)} placeholder="email-baru@example.com" />
+          ) : null}
+          {feature === "RESET_PIN" ? (
+            <Input inputMode="numeric" value={newPin} onChange={(event) => setNewPin(event.target.value.replace(/\D/g, ""))} placeholder="PIN baru, minimal 4 digit" />
+          ) : null}
+          {feature === "UNBLOCK_ACCOUNT" ? (
+            <div className="border border-[#dfe3e8] bg-[#f8fafc] p-3 text-xs leading-5 text-[#667085]">Tidak ada data tambahan yang diperlukan untuk membuka blokir akun.</div>
+          ) : null}
+
+          {feature !== "VIEW_KYC" ? (
+            <Button variant="secondary" onClick={() => void runSensitiveAction()} disabled={!active || !inputValid || pending} className="mt-3 w-full">
+              {pending ? <Loader2 className="h-4 w-4 animate-spin" /> : <SelectedIcon className="h-4 w-4" />}
+              Jalankan {selected.label.toLowerCase()}
+            </Button>
           ) : null}
         </div>
       </div>
+    </section>
+  );
+}
+
+function ValidationCell({ label, valid }: { label: string; valid: boolean }) {
+  return (
+    <div className="bg-[#f8fafc] px-2 py-2.5 text-center">
+      <div className={cn("mx-auto flex h-5 w-5 items-center justify-center rounded-full", valid ? "bg-[#edf4ff] text-[#1769e0]" : "bg-[#fff8e9] text-[#a85d00]")}>
+        {valid ? <Check className="h-3 w-3" /> : <Clock3 className="h-3 w-3" />}
+      </div>
+      <div className="mt-1 text-[10px] font-medium text-[#667085]">{label}</div>
     </div>
   );
 }

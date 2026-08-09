@@ -1,36 +1,59 @@
 import * as React from "react";
-import clsx from "clsx";
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
+import { cn } from "@/utils/cn";
 
 type Variant = "primary" | "secondary" | "danger" | "ghost" | "dark";
 type Size = "sm" | "md" | "lg" | "icon";
+
+const buttonVariants = cva(
+  [
+    "inline-flex shrink-0 items-center justify-center gap-2 rounded-md font-semibold",
+    "disabled:pointer-events-none disabled:opacity-45",
+    "focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-[color:var(--ring)]",
+  ],
+  {
+    variants: {
+      variant: {
+        primary: "bg-[var(--brand)] text-white shadow-[0_5px_14px_rgba(23,105,224,0.18)] hover:-translate-y-px hover:bg-[var(--brand-hover)]",
+        secondary: "border border-[#d6dbe1] bg-white text-[#252932] hover:border-[#b9c1cb] hover:bg-[#f7f9fb]",
+        danger: "bg-[#c83243] text-white hover:bg-[#ad2636]",
+        ghost: "text-[#596170] hover:bg-[#edf0f4] hover:text-[#171a21]",
+        dark: "bg-[#22262f] text-white hover:bg-[#101217]",
+      },
+      size: {
+        sm: "h-9 px-3 text-xs",
+        md: "h-10 px-4 text-sm",
+        lg: "h-12 px-5 text-sm",
+        icon: "h-10 w-10 p-0",
+      },
+    },
+    defaultVariants: {
+      variant: "primary",
+      size: "md",
+    },
+  },
+);
 
 export function Button({
   className,
   variant = "primary",
   size = "md",
+  asChild = false,
   ...props
-}: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: Variant; size?: Size }) {
+}: React.ButtonHTMLAttributes<HTMLButtonElement> &
+  VariantProps<typeof buttonVariants> & {
+    variant?: Variant;
+    size?: Size;
+    asChild?: boolean;
+  }) {
+  const Comp = asChild ? Slot : "button";
   return (
-    <button
-      className={clsx(
-        "inline-flex shrink-0 items-center justify-center gap-2 rounded-lg font-semibold",
-        "focus:outline-none focus:ring-4 focus:ring-[color:var(--ring)]",
-        "disabled:cursor-not-allowed disabled:opacity-55",
-        size === "sm" && "h-9 px-3 text-xs",
-        size === "md" && "h-10 px-4 text-sm",
-        size === "lg" && "h-12 px-5 text-sm",
-        size === "icon" && "h-10 w-10 p-0",
-        variant === "primary" &&
-          "bg-emerald-700 text-white shadow-[0_12px_24px_rgba(0,122,90,0.18)] hover:bg-emerald-800",
-        variant === "secondary" &&
-          "border border-slate-200 bg-white text-slate-800 hover:border-slate-300 hover:bg-slate-50",
-        variant === "danger" &&
-          "bg-rose-700 text-white shadow-[0_12px_24px_rgba(180,35,24,0.18)] hover:bg-rose-800",
-        variant === "ghost" && "text-slate-600 hover:bg-slate-100 hover:text-slate-950",
-        variant === "dark" && "bg-slate-950 text-white hover:bg-slate-800",
-        className,
-      )}
+    <Comp
+      className={cn(buttonVariants({ variant, size }), className)}
       {...props}
     />
   );
 }
+
+export { buttonVariants };

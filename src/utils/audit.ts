@@ -44,7 +44,7 @@ export function auditActionHint(log: AuditLog) {
 
   switch (log.action) {
     case "TICKET_CLAIM":
-      return "LP mulai aktif karena tiket sekarang terikat ke CS tertentu.";
+      return "Least Privilege mulai aktif karena tiket sekarang ditugaskan ke CS tertentu.";
     case "TICKET_STATUS_UPDATE":
       return nextStatus ? `Backend menerima perubahan status menjadi ${nextStatus}.` : "Backend memvalidasi transisi status tiket.";
     case "JIT_REQUEST":
@@ -61,7 +61,7 @@ export function auditActionHint(log: AuditLog) {
     case "JIT_REVOKE_TICKET_CLOSED":
       return "Sesi JIT dicabut otomatis ketika tiket selesai.";
     default:
-      return "Aktivitas ini tercatat pada audit trail tiket.";
+      return "Aktivitas ini tercatat pada log audit tiket.";
   }
 }
 

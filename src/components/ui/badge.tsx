@@ -1,20 +1,34 @@
 import clsx from "clsx";
 import type { TicketStatus, AuditLevel } from "@/types/api";
 
+export const ticketStatusLabel: Record<TicketStatus, string> = {
+  OPEN: "Menunggu CS",
+  CLAIMED: "Sudah diambil",
+  IN_PROGRESS: "Sedang diproses",
+  RESOLVED: "Siap ditutup",
+  CLOSED: "Ditutup",
+};
+
+const auditLevelLabel: Record<AuditLevel, string> = {
+  HIGH: "Tinggi",
+  MEDIUM: "Sedang",
+  LOW: "Rendah",
+};
+
 export function StatusBadge({ status }: { status: TicketStatus }) {
   const cls =
     status === "OPEN"
-      ? "border-slate-200 bg-slate-50 text-slate-700"
+      ? "border-[#d8dde4] bg-[#f5f7fa] text-[#596170]"
       : status === "CLAIMED"
-        ? "border-amber-200 bg-amber-50 text-amber-800"
+        ? "border-[#f0d5ad] bg-[#fff8e9] text-[#8c5207]"
         : status === "IN_PROGRESS"
-          ? "border-cyan-200 bg-cyan-50 text-cyan-800"
+          ? "border-[#c8daf8] bg-[#edf4ff] text-[#1356b8]"
           : status === "RESOLVED"
-            ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-            : "border-slate-300 bg-slate-100 text-slate-800";
+            ? "border-[#cde3d7] bg-[#eef7f2] text-[#236847]"
+            : "border-[#cfd5dd] bg-[#edf0f4] text-[#4e5663]";
   return (
-    <span className={clsx("inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase", cls)}>
-      {status}
+    <span className={clsx("inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold", cls)}>
+      {ticketStatusLabel[status]}
     </span>
   );
 }
@@ -22,13 +36,13 @@ export function StatusBadge({ status }: { status: TicketStatus }) {
 export function LevelBadge({ level }: { level: AuditLevel }) {
   const cls =
     level === "HIGH"
-      ? "border-rose-200 bg-rose-50 text-rose-800"
+      ? "border-[#f0c7cd] bg-[#fff1f3] text-[#a92637]"
       : level === "MEDIUM"
-        ? "border-amber-200 bg-amber-50 text-amber-800"
-        : "border-slate-200 bg-slate-50 text-slate-700";
+        ? "border-[#f0d5ad] bg-[#fff8e9] text-[#8c5207]"
+        : "border-[#d8dde4] bg-[#f5f7fa] text-[#596170]";
   return (
-    <span className={clsx("inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase", cls)}>
-      {level}
+    <span className={clsx("inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold", cls)}>
+      {auditLevelLabel[level]}
     </span>
   );
 }

@@ -4,9 +4,9 @@ export default function UserLoginPage() {
   return (
     <LoginView
       audience="user"
-      title="Akses dompet digital Anda dengan aman"
-      description="Portal pengguna DompetKu dirancang untuk membantu Anda membuat tiket bantuan, memonitor progres, dan berkomunikasi langsung dengan tim support tanpa antarmuka yang membingungkan."
-      defaultEmail="user@example.com"
+      title="Masuk ke prototipe dompet pengguna"
+      description="Lihat data simulasi, buat ticket bantuan, dan pantau aktivitas yang terjadi dalam konteks ticket Anda."
+      defaultEmail="syukur@gmail.com"
       defaultPassword="user123"
       backHref="/login"
     />

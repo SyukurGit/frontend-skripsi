@@ -1,18 +1,17 @@
 "use client";
 
 import * as React from "react";
-import clsx from "clsx";
 import { format } from "date-fns";
-import { Send, Signal, SignalZero, Sparkles } from "lucide-react";
+import { motion } from "motion/react";
+import { Send, Signal, SignalZero } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import type { Message } from "@/types/api";
 import { useChatWs } from "@/hooks/use-chat-ws";
 import { useSendMessage } from "@/services/queries";
 import { useAuthStore } from "@/store/auth";
 import { useToastStore } from "@/store/toast";
 import { getErrorMessage } from "@/utils/api-error";
+import { cn } from "@/utils/cn";
 
 export function ChatPanel({
   ticketId,
@@ -23,123 +22,154 @@ export function ChatPanel({
   initial: Message[];
   role: "user" | "cs";
 }) {
-  const me = useAuthStore((s) => s.user);
-  const toast = useToastStore((s) => s.push);
+  const me = useAuthStore((state) => state.user);
+  const toast = useToastStore((state) => state.push);
   const [appended, setAppended] = React.useState<Message[]>([]);
   const [text, setText] = React.useState("");
   const send = useSendMessage(ticketId, role);
   const listRef = React.useRef<HTMLDivElement | null>(null);
+  const textareaRef = React.useRef<HTMLTextAreaElement | null>(null);
 
-  const onWsMessage = React.useCallback((m: Message) => {
-    setAppended((prev) => {
-      if (prev.some((x) => x.id === m.id)) return prev;
-      return [...prev, m];
+  const onWsMessage = React.useCallback((message: Message) => {
+    setAppended((previous) => {
+      if (previous.some((item) => item.id === message.id)) return previous;
+      return [...previous, message];
     });
   }, []);
 
   const { connected, warning } = useChatWs(ticketId, onWsMessage);
 
   const items = React.useMemo(() => {
-    const all = [...initial, ...appended];
     const seen = new Set<number>();
-    const dedup: Message[] = [];
-    for (const m of all) {
-      if (seen.has(m.id)) continue;
-      seen.add(m.id);
-      dedup.push(m);
-    }
-    dedup.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-    return dedup;
+    return [...initial, ...appended]
+      .filter((message) => {
+        if (seen.has(message.id)) return false;
+        seen.add(message.id);
+        return true;
+      })
+      .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
   }, [initial, appended]);
 
   React.useEffect(() => {
-    const el = listRef.current;
-    if (!el) return;
-    el.scrollTop = el.scrollHeight;
+    const element = listRef.current;
+    if (!element) return;
+    element.scrollTop = element.scrollHeight;
   }, [items.length]);
 
+  React.useEffect(() => {
+    const element = textareaRef.current;
+    if (!element) return;
+    element.style.height = "40px";
+    element.style.height = `${Math.min(element.scrollHeight, 112)}px`;
+  }, [text]);
+
+  async function submit() {
+    const value = text.trim();
+    if (!value || send.isPending) return;
+    setText("");
+    try {
+      await send.mutateAsync(value);
+    } catch (error) {
+      setText(value);
+      toast({ kind: "error", title: "Pesan gagal dikirim", detail: getErrorMessage(error, "Pesan gagal dikirim") });
+    }
+  }
+
   return (
-    <Card className="overflow-hidden">
-      <div className="border-b border-slate-200 bg-slate-950 px-4 py-4 text-white sm:px-5">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-emerald-200">
-              <Sparkles className="h-4 w-4" />
-              Ruang ticket #{ticketId}
-            </div>
-            <div className="mt-2 text-lg font-semibold">Percakapan bantuan</div>
-            <div className="mt-1 text-sm text-slate-300">
-              {role === "cs" ? "CS bekerja di dalam scope ticket ini." : "Pengguna memantau bantuan tanpa melihat akses internal CS."}
-            </div>
-          </div>
-          <div
-            className={clsx(
-              "inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-xs font-semibold",
-              connected ? "border-emerald-300/30 bg-emerald-400/10 text-emerald-100" : "border-amber-300/30 bg-amber-400/10 text-amber-100",
-            )}
-          >
-            {connected ? <Signal className="h-3.5 w-3.5" /> : <SignalZero className="h-3.5 w-3.5" />}
-            {connected ? "Realtime aktif" : "Menyambung"}
+    <section className="flex h-[min(720px,calc(100dvh-10rem))] min-h-[520px] flex-col overflow-hidden rounded-lg border border-[#dfe3e8] bg-white shadow-[0_1px_2px_rgba(17,26,36,0.035)]">
+      <header className="flex items-center justify-between gap-3 border-b border-[#e1e5ea] bg-white px-4 py-3.5 sm:px-5">
+        <div className="min-w-0">
+          <div className="truncate text-sm font-semibold text-[#252932]">Percakapan ticket #{ticketId}</div>
+          <div className="mt-0.5 truncate text-xs text-[#7b8492]">
+            {role === "cs" ? "Hanya tersedia dalam assignment ticket ini" : "Percakapan dengan Customer Support"}
           </div>
         </div>
-      </div>
+        <div
+          className={cn(
+            "flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium",
+            connected ? "border-[#c8daf8] bg-[#edf4ff] text-[#1356b8]" : "border-[#f0d5ad] bg-[#fff8e9] text-[#8c5207]",
+          )}
+        >
+          {connected ? <Signal className="h-3.5 w-3.5" /> : <SignalZero className="h-3.5 w-3.5" />}
+          <span className="hidden xs:inline">{connected ? "Terhubung" : "Menyambung"}</span>
+        </div>
+      </header>
 
-      {warning ? <div className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-xs text-amber-900">{warning}</div> : null}
+      {warning ? <div className="border-b border-[#f0d5ad] bg-[#fff8e9] px-4 py-2 text-xs text-[#8c5207]">{warning}</div> : null}
 
-      <div ref={listRef} className="h-[430px] overflow-auto bg-[#f8faf7] p-3 sm:p-5">
-        <div className="space-y-3">
-          {items.map((m) => {
-            const mine = me?.id === m.senderId;
-            const system = m.senderId === 0;
+      <div ref={listRef} className="app-scrollbar min-h-0 flex-1 overflow-y-auto overscroll-contain bg-[#f8fafc] px-3 py-4 sm:px-5">
+        <div className="mx-auto max-w-3xl space-y-3">
+          {items.map((message) => {
+            const mine = me?.id === message.senderId;
+            const system = message.senderId === 0;
             return (
-              <div key={m.id} className={clsx("flex", system ? "justify-center" : mine ? "justify-end" : "justify-start")}>
-                <div
-                  className={clsx(
-                    "max-w-[88%] rounded-xl px-4 py-3 text-sm shadow-sm sm:max-w-[76%]",
-                    system
-                      ? "border border-sky-200 bg-sky-50 text-sky-950"
-                      : mine
-                        ? "bg-emerald-700 text-white"
-                        : "border border-slate-200 bg-white text-slate-800",
-                  )}
-                >
-                  <div className={clsx("text-[11px] font-semibold uppercase tracking-[0.12em]", system ? "text-sky-700" : mine ? "text-emerald-100" : "text-slate-400")}>
-                    {system ? "Notifikasi sistem" : mine ? "Anda" : role === "cs" ? "Pengguna" : "Customer Service"} - {format(new Date(m.createdAt), "HH:mm")}
+              <motion.div
+                key={message.id}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                className={cn("flex", system ? "justify-center" : mine ? "justify-end" : "justify-start")}
+              >
+                {system ? (
+                  <div className="max-w-[92%] rounded-md border border-[#c8daf8] bg-[#edf4ff] px-3 py-2 text-center text-xs leading-5 text-[#284f86]">
+                    {message.message}
+                    <span className="ml-2 text-[10px] text-[#6684aa]">{format(new Date(message.createdAt), "HH:mm")}</span>
                   </div>
-                  <div className="mt-1 whitespace-pre-wrap break-words leading-6">{m.message}</div>
-                </div>
-              </div>
+                ) : (
+                  <div
+                    className={cn(
+                      "max-w-[84%] rounded-lg px-3.5 py-2.5 text-sm sm:max-w-[72%]",
+                      mine
+                        ? "rounded-br-sm bg-[#1769e0] text-white shadow-[0_3px_10px_rgba(23,105,224,0.14)]"
+                        : "rounded-bl-sm border border-[#dfe3e8] bg-white text-[#252932]",
+                    )}
+                  >
+                    <div className="whitespace-pre-wrap break-words leading-6">{message.message}</div>
+                    <div className={cn("mt-1 text-right text-[10px]", mine ? "text-white/65" : "text-[#98a0ad]")}>
+                      {mine ? "Anda" : role === "cs" ? "Pengguna" : "Customer Support"} · {format(new Date(message.createdAt), "HH:mm")}
+                    </div>
+                  </div>
+                )}
+              </motion.div>
             );
           })}
           {items.length === 0 ? (
-            <div className="rounded-lg border border-dashed border-slate-300 bg-white p-6 text-sm text-slate-500">
-              Belum ada pesan. Kirim pesan pertama untuk memulai percakapan ticket ini.
+            <div className="flex min-h-40 items-center justify-center text-center">
+              <div>
+                <div className="text-sm font-semibold text-[#596170]">Belum ada pesan</div>
+                <p className="mt-1 text-xs leading-5 text-[#98a0ad]">Kirim pesan untuk memulai percakapan dalam ticket ini.</p>
+              </div>
             </div>
           ) : null}
         </div>
       </div>
 
       <form
-        className="flex flex-col gap-2 border-t border-slate-200 bg-white p-3 sm:flex-row"
-        onSubmit={async (e) => {
-          e.preventDefault();
-          const v = text.trim();
-          if (!v) return;
-          setText("");
-          try {
-            await send.mutateAsync(v);
-          } catch (error) {
-            setText(v);
-            toast({ kind: "error", title: "Pesan gagal dikirim", detail: getErrorMessage(error, "Pesan gagal dikirim") });
-          }
+        className="safe-bottom flex items-end gap-2 border-t border-[#dfe3e8] bg-white px-3 pt-3 sm:px-4"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void submit();
         }}
       >
-        <Input value={text} onChange={(e) => setText(e.target.value)} placeholder="Tulis pesan bantuan..." />
-        <Button type="submit" disabled={send.isPending} className="sm:w-auto">
+        <textarea
+          ref={textareaRef}
+          value={text}
+          onChange={(event) => setText(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              void submit();
+            }
+          }}
+          rows={1}
+          maxLength={2000}
+          placeholder="Tulis pesan..."
+          className="app-scrollbar min-h-10 flex-1 resize-none rounded-md border border-[#d6dbe1] bg-white px-3 py-2.5 text-sm leading-5 text-[#252932] outline-none placeholder:text-[#98a0ad] focus:border-[var(--brand)] focus:ring-4 focus:ring-[color:var(--ring)]"
+          aria-label="Pesan ticket"
+        />
+        <Button type="submit" size="icon" disabled={send.isPending || text.trim().length === 0} aria-label="Kirim pesan">
           <Send className="h-4 w-4" />
-          {send.isPending ? "Mengirim" : "Kirim"}
         </Button>
       </form>
-    </Card>
+    </section>
   );
 }

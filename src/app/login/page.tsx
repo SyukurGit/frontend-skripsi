@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight, Headphones, ShieldCheck, UserRound } from "lucide-react";
+import { motion } from "motion/react";
+import { ArrowLeft, ArrowRight, Headphones, ShieldCheck, UserRound } from "lucide-react";
 import { LogoMark } from "@/components/branding/logo-mark";
 import { Button } from "@/components/ui/button";
 import { useAuthedRedirect } from "@/hooks/use-authed-redirect";
@@ -9,16 +10,16 @@ import { useAuthedRedirect } from "@/hooks/use-authed-redirect";
 const options = [
   {
     href: "/login/user",
-    title: "Portal Pengguna",
-    desc: "Masuk sebagai nasabah untuk melihat saldo, transaksi, membuat ticket, dan menerima transparansi aktivitas sensitif.",
-    badge: "USER",
+    title: "Pengguna",
+    description: "Melihat konteks dompet simulasi, membuat ticket, dan berkomunikasi dengan Customer Support.",
+    note: "Pemilik data dan ticket",
     icon: UserRound,
   },
   {
     href: "/login/staff",
-    title: "Workspace Staff",
-    desc: "Masuk sebagai CS atau Admin untuk menguji assignment ticket, JIT access, audit log, dan terminal trace.",
-    badge: "CS / ADMIN",
+    title: "Petugas",
+    description: "Masuk sebagai Customer Support atau Administrator sesuai skenario pengujian.",
+    note: "Akses internal berbasis role",
     icon: Headphones,
   },
 ];
@@ -27,55 +28,61 @@ export default function LoginChooserPage() {
   useAuthedRedirect();
 
   return (
-    <main className="min-h-screen bg-[#f6f7f4] px-4 py-6 sm:px-6">
-      <div className="mx-auto max-w-6xl">
-        <div className="flex items-center justify-between">
+    <main className="min-h-screen bg-[#f5f7fa]">
+      <header className="border-b border-[#dfe3e8] bg-white">
+        <div className="mx-auto flex h-[68px] max-w-6xl items-center justify-between px-4 sm:px-6">
           <LogoMark compact />
-          <Link href="/homepage">
-            <Button variant="secondary" size="sm">Landing</Button>
-          </Link>
+          <Button asChild variant="ghost" size="sm">
+            <Link href="/homepage">
+              <ArrowLeft className="h-4 w-4" />
+              Beranda
+            </Link>
+          </Button>
+        </div>
+      </header>
+
+      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
+        <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="max-w-2xl">
+          <div className="flex items-center gap-2 text-xs font-semibold text-[var(--brand)]">
+            <ShieldCheck className="h-4 w-4" />
+            Akses prototipe berdasarkan role
+          </div>
+          <h1 className="mt-4 text-3xl font-semibold text-[#171a21] sm:text-4xl">Pilih aktor untuk memulai skenario.</h1>
+          <p className="mt-3 text-sm leading-7 text-[#667085] sm:text-base">
+            Login hanya menentukan area awal. Akses berikutnya tetap dibatasi oleh assignment ticket, status, feature, dan session JIT yang valid.
+          </p>
+        </motion.div>
+
+        <div className="mt-9 grid overflow-hidden border border-[#dfe3e8] bg-[#dfe3e8] md:grid-cols-2">
+          {options.map((option, index) => {
+            const Icon = option.icon;
+            return (
+              <motion.div key={option.href} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: index * 0.06 }}>
+                <Link
+                  href={option.href}
+                  className="group flex h-full min-h-[260px] flex-col bg-white p-6 hover:bg-[#f8fafc] sm:p-8"
+                >
+                  <div className="flex items-start justify-between">
+                    <span className="flex h-10 w-10 items-center justify-center rounded-md bg-[#22262f] text-white">
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <ArrowRight className="h-5 w-5 text-[#98a0ad] transition-transform group-hover:translate-x-1 group-hover:text-[var(--brand)]" />
+                  </div>
+                  <div className="mt-auto pt-10">
+                    <div className="text-xs font-medium text-[#b44731]">{option.note}</div>
+                    <h2 className="mt-2 text-2xl font-semibold text-[#171a21]">{option.title}</h2>
+                    <p className="mt-2 max-w-md text-sm leading-6 text-[#667085]">{option.description}</p>
+                  </div>
+                </Link>
+              </motion.div>
+            );
+          })}
         </div>
 
-        <section className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_18px_48px_rgba(16,24,32,0.07)] sm:p-8">
-          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
-            <div>
-              <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-800">
-                <ShieldCheck className="h-4 w-4" />
-                Role-based entry point
-              </div>
-              <h1 className="mt-5 text-3xl font-semibold tracking-tight text-slate-950 sm:text-4xl">Pilih ruang uji sesuai aktor sistem.</h1>
-              <p className="mt-4 text-sm leading-7 text-slate-600">
-                Frontend ini sengaja memisahkan pengalaman pengguna, Customer Support, dan Administrator agar pengujian RBAC, Least Privilege, dan JIT dapat terlihat dari alur yang berbeda.
-              </p>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              {options.map((option) => {
-                const Icon = option.icon;
-                return (
-                  <Link
-                    key={option.href}
-                    href={option.href}
-                    className="group rounded-xl border border-slate-200 bg-[#fbfcf8] p-5 transition hover:border-emerald-300 hover:bg-emerald-50/40"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-950 text-white">
-                        <Icon className="h-5 w-5" />
-                      </div>
-                      <span className="rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-semibold text-slate-600">{option.badge}</span>
-                    </div>
-                    <div className="mt-5 text-xl font-semibold text-slate-950">{option.title}</div>
-                    <div className="mt-2 text-sm leading-6 text-slate-600">{option.desc}</div>
-                    <div className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-emerald-800">
-                      Lanjutkan
-                      <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-                    </div>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-      </div>
+        <div className="mt-5 border-l-2 border-[var(--coral)] bg-[#fff1ed] px-4 py-3 text-xs leading-5 text-[#6e3c32]">
+          Frontend ini merupakan media demonstrasi. Keputusan menerima atau menolak akses tetap dijalankan oleh backend prototipe.
+        </div>
+      </section>
     </main>
   );
 }
