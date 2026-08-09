@@ -8,6 +8,7 @@ import {
   Activity,
   ArrowLeft,
   Check,
+  ExternalLink,
   KeyRound,
   LockKeyhole,
   RefreshCw,
@@ -17,6 +18,7 @@ import {
 import { LogoMark } from "@/components/branding/logo-mark";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { getFirstDemoAccount, type DemoRole } from "@/data/demo-accounts";
 import { useHealth, useLogin } from "@/services/queries";
 import { useAuthStore } from "@/store/auth";
 import { useToastStore } from "@/store/toast";
@@ -91,14 +93,11 @@ export function LoginView({
     }
   }
 
-  function applyCredential(kind: "user" | "cs" | "admin") {
-    const credentials = {
-      user: ["user@example.com", "user123"],
-      cs: ["cs@example.com", "cs123"],
-      admin: ["admin@example.com", "admin123"],
-    } as const;
-    setEmail(credentials[kind][0]);
-    setPassword(credentials[kind][1]);
+  function applyCredential(role: DemoRole) {
+    const account = getFirstDemoAccount(role);
+    if (!account) return;
+    setEmail(account.email);
+    setPassword(account.password);
   }
 
   const serviceReady = !health.isLoading && !health.isError;
@@ -197,7 +196,18 @@ export function LoginView({
                   </>
                 )}
               </div>
-              <p className="mt-2 text-xs leading-5 text-[#7b8492]">Kredensial hanya untuk lingkungan lokal prototipe.</p>
+              <div className="mt-3 flex flex-col gap-2 border-t border-[#dfe3e8] pt-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-xs leading-5 text-[#7b8492]">Kredensial hanya untuk lingkungan lokal prototipe.</p>
+                <Link
+                  href="/login/demo-accounts"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex shrink-0 items-center gap-1.5 text-xs font-semibold text-[var(--brand)] hover:text-[var(--brand-hover)]"
+                >
+                  Lihat semua akun demo
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </Link>
+              </div>
             </div>
 
             <div className="border-l-2 border-[var(--coral)] bg-[#fff1ed] px-3 py-2.5 text-xs leading-5 text-[#6e3c32]">
